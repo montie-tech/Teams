@@ -3,7 +3,7 @@ let selectedUser = null;
 let socket = null;
 let authMode = "login";
 
-const API_BASE_URL = "https://teams-88mx.onrender.com"; 
+const API_BASE_URL = "https://teams-88mx.onrender.com";
 
 const authScreen = document.getElementById("authScreen");
 const appScreen = document.getElementById("appScreen");
@@ -60,7 +60,7 @@ async function api(url, options = {}) {
         ...(options.headers || {})
     };
 
-    const response = await fetch(`${API_BASE_URL}${url}`, config); 
+    const response = await fetch(`${API_BASE_URL}${url}`, config);
 
 
     let data = {};

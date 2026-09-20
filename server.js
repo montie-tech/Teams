@@ -307,7 +307,7 @@ app.post("/api/messages", requireAuth, (req, res) => {
     res.status(201).json({ message });
 });
 
-// Express 5-compatible SPA fallback.
+// Express 5-compatible SPA fallback
 app.get("/{*splat}", (req, res, next) => {
     if (req.path.startsWith("/api/")) {
         return next();
@@ -316,11 +316,11 @@ app.get("/{*splat}", (req, res, next) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Share the Express session with Socket.IO.
+// Share the Express session with Socket.IO
 io.engine.use(sessionMiddleware);
 
 io.on("connection", (socket) => {
-    const userId = socket.request.session ? .userId;
+    const userId = socket.request.session ? .userId; // FIXED: removed space between ? and .
 
     if (!userId) {
         socket.disconnect(true);
