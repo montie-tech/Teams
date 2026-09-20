@@ -320,7 +320,7 @@ app.get("/{*splat}", (req, res, next) => {
 io.engine.use(sessionMiddleware);
 
 io.on("connection", (socket) => {
-    const userId = socket.request.session ? .userId; // FIXED: removed space between ? and .
+    const userId = socket.request.session?.userId; 
 
     if (!userId) {
         socket.disconnect(true);
