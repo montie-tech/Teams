@@ -6,6 +6,13 @@ const bcrypt = require("bcryptjs");
 const Database = require("better-sqlite3");
 const { Server } = require("socket.io");
 
+const cors = require('cors');
+
+app.use(cors({
+  origin: 'https://teams-3d363.web.app', // Your Firebase URL
+  credentials: true // MUST be true for sessions/cookies to work
+}));
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -44,7 +51,8 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "none",
+    secure: true, 
     maxAge: 24 * 60 * 60 * 1000
   }
 });
