@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require("http");
 const path = require("path");
+const fs = require("fs"); // <-- NEW
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
 const Database = require("better-sqlite3");
@@ -13,10 +14,12 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
-// Database path - uses persistent disk on Render
-const dbPath = process.env.RENDER ?
-    "/var/data/teams_chat.db" :
-    path.join(__dirname, "teams_chat.db");
+// Database path - auto-create directory
+const dbDir = process.env.RENDER ? "/var/data" : __dirname;
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+const dbPath = path.join(dbDir, "teams_chat.db");
 const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 
@@ -320,7 +323,7 @@ app.get("/{*splat}", (req, res, next) => {
 io.engine.use(sessionMiddleware);
 
 io.on("connection", (socket) => {
-    const userId = socket.request.session?.userId; 
+    const userId = socket.request.session ? .userId;
 
     if (!userId) {
         socket.disconnect(true);
