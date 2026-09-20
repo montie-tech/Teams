@@ -3,6 +3,8 @@ let selectedUser = null;
 let socket = null;
 let authMode = "login";
 
+const API_BASE_URL = "https://teams-88mx.onrender.com"; 
+
 const authScreen = document.getElementById("authScreen");
 const appScreen = document.getElementById("appScreen");
 
@@ -49,7 +51,7 @@ function formatTime(dateString) {
 
 async function api(url, options = {}) {
     const config = {
-        credentials: "same-origin",
+        credentials: "include",
         ...options
     };
 
@@ -58,7 +60,8 @@ async function api(url, options = {}) {
         ...(options.headers || {})
     };
 
-    const response = await fetch(url, config);
+    const response = await fetch(`${API_BASE_URL}${url}`, config); 
+
 
     let data = {};
 
@@ -158,7 +161,7 @@ async function showApp() {
     document.getElementById("myAvatar").textContent = initials(currentUser.name);
 
     if (!socket) {
-        socket = io();
+        socket = io(API_BASE_URL);
 
         socket.on("connect", () => {
             console.log("Connected to TeamSpace real-time server.");
