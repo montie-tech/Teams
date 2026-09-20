@@ -1,0 +1,4 @@
+node_modules/
+teams_chat.db
+.env
+npm-debug.log*

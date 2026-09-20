@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeamsChat</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-card">
+
+      <div class="brand brand-large">
+        <div class="brand-icon">T</div>
+        <div>
+          <strong>TeamSpace</strong>
+          <span>Connect. Chat. Collaborate.</span>
+        </div>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="tab active" data-mode="login">Sign in</button>
+        <button class="tab" data-mode="register">Create account</button>
+      </div>
+
+      <form id="authForm" novalidate>
+
+        <div id="nameGroup" class="form-group hidden">
+          <label for="name">Full name</label>
+          <input
+            id="name"
+            type="text"
+            placeholder="e.g. Montie Carmon"
+            autocomplete="name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="At least 6 characters"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button id="authButton" class="primary-btn" type="submit">
+          Sign in
+        </button>
+
+        <p id="authError" class="error"></p>
+      </form>
+    </div>
+  </section>
+
+  <div id="appScreen" class="app hidden">
+
+    <aside class="sidebar">
+
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-icon">T</div>
+          <div>
+            <strong>Teams</strong>
+            <span>Messages</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title">Workspace</div>
+
+        <button class="nav-item active" type="button">
+          <span>💬</span> Chat
+        </button>
+
+        <button class="nav-item" type="button">
+          <span>👥</span> People
+        </button>
+      </div>
+
+      <div class="sidebar-section contacts-section">
+
+        <div class="section-title">
+          <span>Contacts</span>
+          <button id="refreshUsers" type="button" title="Refresh contacts">↻</button>
+        </div>
+
+        <div id="userList"></div>
+      </div>
+
+      <div class="profile">
+        <div id="myAvatar" class="avatar"></div>
+
+        <div class="profile-info">
+          <strong id="myName"></strong>
+          <span id="myEmail"></span>
+        </div>
+
+        <button id="logoutBtn" type="button" title="Sign out">↪</button>
+      </div>
+
+    </aside>
+
+    <main class="chat-area">
+
+      <header class="chat-header">
+        <div id="chatUserAvatar" class="avatar"></div>
+
+        <div>
+          <h2 id="chatUserName">Select a contact</h2>
+          <p id="chatStatus">
+            Choose someone from your contacts to start chatting.
+          </p>
+        </div>
+      </header>
+
+      <section id="messages" class="messages">
+
+        <div class="empty-chat">
+          <div class="empty-icon">💬</div>
+          <h2>Your conversations</h2>
+          <p>Select a registered user from the left to start a private chat.</p>
+        </div>
+
+      </section>
+
+      <form id="messageForm" class="composer hidden">
+
+        <input
+          id="messageInput"
+          type="text"
+          autocomplete="off"
+          maxlength="5000"
+          placeholder="Type a message..."
+        >
+
+        <button type="submit" title="Send message">➤</button>
+
+      </form>
+
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
