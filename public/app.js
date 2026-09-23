@@ -1,6 +1,7 @@
-const API_BASE_URL = "https://teams-88mx.onrender.com";
+const API_BASE_URL = window.location.hostname === "localhost"
+  ? ""
+  : "https://teams-88mx.onrender.com";let currentUser = null;
 
-let currentUser = null;
 let selectedUser = null;
 let socket = null;
 let authMode = "login";
@@ -26,6 +27,34 @@ const chatUserName = document.getElementById("chatUserName");
 const chatStatus = document.getElementById("chatStatus");
 const chatUserAvatar = document.getElementById("chatUserAvatar");
 
+/*
+  ========================================
+  Authentication Token
+  ========================================
+*/
+
+const TOKEN_KEY = "teamspace_token";
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function saveToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+}
+
+function removeToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+/*
+  ========================================
+  Helpers
+  ========================================
+*/
+
 function initials(name) {
   return String(name)
     .trim()
@@ -37,7 +66,15 @@ function initials(name) {
 }
 
 function formatTime(dateString) {
-  const date = new Date(String(dateString).replace(" ", "T") + "Z");
+  const raw = String(dateString || "");
+
+  let date;
+
+  if (raw.includes("T")) {
+    date = new Date(raw);
+  } else {
+    date = new Date(raw.replace(" ", "T") + "Z");
+  }
 
   if (Number.isNaN(date.getTime())) {
     return "";
@@ -49,19 +86,34 @@ function formatTime(dateString) {
   });
 }
 
+/*
+  ========================================
+  API Helper
+  ========================================
+*/
+
 async function api(url, options = {}) {
   const fullUrl = `${API_BASE_URL}${url}`;
 
-  const config = {
-    credentials: "include",
-    ...options
-  };
+  const token = getToken();
 
-  config.headers = {
+  const headers = {
     ...(options.body
-      ? { "Content-Type": "application/json" }
+      ? {
+          "Content-Type": "application/json"
+        }
       : {}),
     ...(options.headers || {})
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const config = {
+    ...options,
+    credentials: "include",
+    headers
   };
 
   const response = await fetch(fullUrl, config);
@@ -75,13 +127,24 @@ async function api(url, options = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      removeToken();
+    }
+
     throw new Error(
-      data.error || `Request failed (${response.status})`
+      data.error ||
+        `Request failed (${response.status})`
     );
   }
 
   return data;
 }
+
+/*
+  ========================================
+  Login / Register Tabs
+  ========================================
+*/
 
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
@@ -111,6 +174,12 @@ document.querySelectorAll(".tab").forEach(tab => {
     authError.textContent = "";
   });
 });
+
+/*
+  ========================================
+  Login / Registration
+  ========================================
+*/
 
 authForm.addEventListener("submit", async event => {
   event.preventDefault();
@@ -145,17 +214,33 @@ authForm.addEventListener("submit", async event => {
       body: JSON.stringify(payload)
     });
 
+    /*
+      Save the JWT returned by Render.
+    */
+    saveToken(data.token);
+
     currentUser = data.user;
 
+    /*
+      Show the TeamSpace application.
+    */
     await showApp();
   } catch (error) {
     console.error(error);
-    authError.textContent = error.message;
+
+    authError.textContent =
+      error.message;
   } finally {
     authButton.disabled = false;
     authButton.textContent = originalText;
   }
 });
+
+/*
+  ========================================
+  Show Application
+  ========================================
+*/
 
 async function showApp() {
   authScreen.classList.add("hidden");
@@ -170,37 +255,101 @@ async function showApp() {
   document.getElementById("myAvatar").textContent =
     initials(currentUser.name);
 
-  if (!socket) {
-    socket = io(API_BASE_URL, {
-      withCredentials: true
-    });
+  /*
+    Connect Socket.IO using JWT.
+  */
+  connectSocket();
 
-    socket.on("connect", () => {
-      console.log(
-        "Connected to TeamSpace real-time server."
-      );
-    });
-
-    socket.on("connect_error", error => {
-      console.error(
-        "Socket.IO error:",
-        error.message
-      );
-    });
-
-    socket.on("new-message", message => {
-      if (
-        selectedUser &&
-        Number(message.senderId) ===
-          Number(selectedUser.id)
-      ) {
-        renderMessages([message], true);
-      }
-    });
-  }
-
+  /*
+    Load all registered users except yourself.
+  */
   await loadUsers();
 }
+
+/*
+  ========================================
+  Socket.IO
+  ========================================
+*/
+
+function connectSocket() {
+  const token = getToken();
+
+  if (!token) {
+    console.warn(
+      "No authentication token available for Socket.IO."
+    );
+    return;
+  }
+
+  /*
+    Don't create duplicate connections.
+  */
+  if (socket) {
+    return;
+  }
+
+  socket = io(API_BASE_URL, {
+    auth: {
+      token
+    },
+    withCredentials: true
+  });
+
+  socket.on("connect", () => {
+    console.log(
+      "Connected to TeamSpace real-time server."
+    );
+  });
+
+  socket.on("connect_error", error => {
+    console.error(
+      "Socket.IO error:",
+      error.message
+    );
+  });
+
+  socket.on("new-message", message => {
+    /*
+      Only display the message immediately if
+      the sender is the currently selected person.
+    */
+    if (
+      selectedUser &&
+      Number(message.senderId) ===
+        Number(selectedUser.id)
+    ) {
+      renderMessages([message], true);
+    }
+  });
+
+  socket.on("message-sent", message => {
+    /*
+      The sender already renders the response
+      returned by POST /api/messages.
+
+      Therefore we don't render this event again,
+      otherwise the sender would see duplicates.
+    */
+    console.log(
+      "Message sent successfully:",
+      message
+    );
+  });
+
+  socket.on("disconnect", reason => {
+    console.log(
+      "Disconnected from TeamSpace real-time server:",
+      reason
+    );
+  });
+}
+
+/*
+  ========================================
+  Load Users
+  ========================================
+*/
 
 async function loadUsers() {
   try {
@@ -208,13 +357,15 @@ async function loadUsers() {
 
     userList.innerHTML = "";
 
-    if (!data.users.length) {
+    if (!data.users || !data.users.length) {
       userList.innerHTML = `
         <div class="no-users">
           No other accounts yet.<br><br>
-          Open an Incognito/private browser window and create a second account to test messaging.
+          Open an Incognito/private browser window
+          and create a second account to test messaging.
         </div>
       `;
+
       return;
     }
 
@@ -225,16 +376,20 @@ async function loadUsers() {
       item.dataset.id = user.id;
 
       const avatar = document.createElement("div");
+
       avatar.className = "user-avatar";
       avatar.textContent = initials(user.name);
 
       const info = document.createElement("div");
+
       info.className = "user-info";
 
       const name = document.createElement("strong");
+
       name.textContent = user.name;
 
       const email = document.createElement("span");
+
       email.textContent = user.email;
 
       info.appendChild(name);
@@ -243,14 +398,29 @@ async function loadUsers() {
       item.appendChild(avatar);
       item.appendChild(info);
 
-      item.addEventListener("click", () =>
-        selectUser(user)
-      );
+      item.addEventListener("click", () => {
+        selectUser(user);
+      });
 
       userList.appendChild(item);
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Unable to load users:",
+      error
+    );
+
+    /*
+      If the JWT expired or is invalid,
+      return to login.
+    */
+    if (
+      error.message.includes("session has expired") ||
+      error.message.includes("logged in")
+    ) {
+      handleAuthenticationFailure();
+      return;
+    }
 
     userList.innerHTML = `
       <div class="no-users">
@@ -261,21 +431,34 @@ async function loadUsers() {
   }
 }
 
+/*
+  ========================================
+  Select User
+  ========================================
+*/
+
 async function selectUser(user) {
   selectedUser = user;
 
   document.querySelectorAll(".user-item").forEach(item => {
     item.classList.toggle(
       "selected",
-      Number(item.dataset.id) === Number(user.id)
+      Number(item.dataset.id) ===
+        Number(user.id)
     );
   });
 
-  chatUserName.textContent = user.name;
-  chatStatus.textContent = user.email;
-  chatUserAvatar.textContent = initials(user.name);
+  chatUserName.textContent =
+    user.name;
+
+  chatStatus.textContent =
+    user.email;
+
+  chatUserAvatar.textContent =
+    initials(user.name);
 
   messageForm.classList.remove("hidden");
+
   messageInput.focus();
 
   try {
@@ -285,15 +468,31 @@ async function selectUser(user) {
 
     messagesBox.innerHTML = "";
 
-    renderMessages(data.messages, false);
+    renderMessages(
+      data.messages,
+      false
+    );
   } catch (error) {
+    console.error(
+      "Unable to load messages:",
+      error
+    );
+
     messagesBox.innerHTML = `
       <div class="empty-chat">
-        <p>${escapeHtml(error.message)}</p>
+        <p>
+          ${escapeHtml(error.message)}
+        </p>
       </div>
     `;
   }
 }
+
+/*
+  ========================================
+  Render Messages
+  ========================================
+*/
 
 function renderMessages(messages, append) {
   if (!append) {
@@ -304,13 +503,19 @@ function renderMessages(messages, append) {
     messagesBox.innerHTML = `
       <div class="empty-chat">
         <div class="empty-icon">👋</div>
-        <h2>Start a conversation</h2>
+
+        <h2>
+          Start a conversation
+        </h2>
+
         <p>
-          Send ${escapeHtml(selectedUser.name)}
+          Send
+          ${escapeHtml(selectedUser.name)}
           your first message.
         </p>
       </div>
     `;
+
     return;
   }
 
@@ -319,28 +524,42 @@ function renderMessages(messages, append) {
       Number(message.senderId) ===
       Number(currentUser.id);
 
-    const row = document.createElement("div");
+    const row =
+      document.createElement("div");
 
     row.className =
       `message-row${mine ? " mine" : ""}`;
 
-    const bubble = document.createElement("div");
+    const bubble =
+      document.createElement("div");
+
     bubble.className = "message";
 
-    const body = document.createElement("div");
-    body.className = "message-body";
-    body.textContent = message.body;
+    const body =
+      document.createElement("div");
 
-    const time = document.createElement("div");
-    time.className = "message-time";
-    time.textContent = formatTime(
-      message.createdAt
-    );
+    body.className =
+      "message-body";
+
+    body.textContent =
+      message.body;
+
+    const time =
+      document.createElement("div");
+
+    time.className =
+      "message-time";
+
+    time.textContent =
+      formatTime(
+        message.createdAt
+      );
 
     bubble.appendChild(body);
     bubble.appendChild(time);
 
     row.appendChild(bubble);
+
     messagesBox.appendChild(row);
   });
 
@@ -348,58 +567,199 @@ function renderMessages(messages, append) {
     messagesBox.scrollHeight;
 }
 
-messageForm.addEventListener("submit", async event => {
-  event.preventDefault();
+/*
+  ========================================
+  Send Message
+  ========================================
+*/
 
-  const body = messageInput.value.trim();
-
-  if (!body || !selectedUser) {
-    return;
-  }
-
-  messageInput.value = "";
-
-  try {
-    const data = await api("/api/messages", {
-      method: "POST",
-      body: JSON.stringify({
-        receiverId: selectedUser.id,
-        body
-      })
-    });
-
-    renderMessages([data.message], true);
-  } catch (error) {
-    console.error(error);
-    alert(error.message);
-  }
-});
-
-messageInput.addEventListener("keydown", event => {
-  if (
-    event.key === "Enter" &&
-    !event.shiftKey
-  ) {
+messageForm.addEventListener(
+  "submit",
+  async event => {
     event.preventDefault();
-    messageForm.requestSubmit();
+
+    const body =
+      messageInput.value.trim();
+
+    if (!body || !selectedUser) {
+      return;
+    }
+
+    /*
+      Clear input immediately.
+    */
+    messageInput.value = "";
+
+    try {
+      const data = await api(
+        "/api/messages",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            receiverId:
+              selectedUser.id,
+
+            body
+          })
+        }
+      );
+
+      /*
+        Render the message returned by
+        the backend.
+      */
+      renderMessages(
+        [data.message],
+        true
+      );
+    } catch (error) {
+      console.error(
+        "Unable to send message:",
+        error
+      );
+
+      /*
+        Restore the text if sending fails.
+      */
+      messageInput.value = body;
+
+      alert(error.message);
+    }
   }
-});
+);
+
+/*
+  ========================================
+  Enter to Send
+  ========================================
+*/
+
+messageInput.addEventListener(
+  "keydown",
+  event => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
+      event.preventDefault();
+
+      messageForm.requestSubmit();
+    }
+  }
+);
+
+/*
+  ========================================
+  Refresh Users
+  ========================================
+*/
 
 document
   .getElementById("refreshUsers")
-  .addEventListener("click", loadUsers);
+  .addEventListener(
+    "click",
+    loadUsers
+  );
+
+/*
+  ========================================
+  Logout
+  ========================================
+*/
 
 document
   .getElementById("logoutBtn")
-  .addEventListener("click", async () => {
-    try {
-      await api("/api/logout", {
-        method: "POST"
-      });
-    } finally {
-      window.location.reload();
+  .addEventListener(
+    "click",
+    async () => {
+      try {
+        /*
+          Tell the backend about logout.
+        */
+        await api(
+          "/api/logout",
+          {
+            method: "POST"
+          }
+        );
+      } catch (error) {
+        console.error(
+          "Logout request failed:",
+          error
+        );
+      } finally {
+        /*
+          JWT is stored in localStorage,
+          so we must remove it ourselves.
+        */
+        removeToken();
+
+        /*
+          Close Socket.IO.
+        */
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+        }
+
+        currentUser = null;
+        selectedUser = null;
+
+        /*
+          Return to login screen.
+        */
+        appScreen.classList.add(
+          "hidden"
+        );
+
+        authScreen.classList.remove(
+          "hidden"
+        );
+
+        authForm.reset();
+
+        authError.textContent = "";
+
+        /*
+          Reset to login mode.
+        */
+        authMode = "login";
+
+        document
+          .querySelectorAll(".tab")
+          .forEach(tab => {
+            tab.classList.remove(
+              "active"
+            );
+          });
+
+        const loginTab =
+          document.querySelector(
+            '.tab[data-mode="login"]'
+          );
+
+        if (loginTab) {
+          loginTab.classList.add(
+            "active"
+          );
+        }
+
+        nameGroup.classList.add(
+          "hidden"
+        );
+
+        authButton.textContent =
+          "Sign in";
+      }
     }
-  });
+  );
+
+/*
+  ========================================
+  Escape HTML
+  ========================================
+*/
 
 function escapeHtml(value) {
   return String(value)
@@ -410,16 +770,80 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-async function init() {
-  try {
-    const data = await api("/api/me");
+/*
+  ========================================
+  Authentication Failure
+  ========================================
+*/
 
-    currentUser = data.user;
+function handleAuthenticationFailure() {
+  removeToken();
+
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+
+  currentUser = null;
+  selectedUser = null;
+
+  appScreen.classList.add("hidden");
+  authScreen.classList.remove("hidden");
+
+  authError.textContent =
+    "Your session has expired. Please sign in again.";
+}
+
+/*
+  ========================================
+  Application Initialization
+  ========================================
+*/
+
+async function init() {
+  const token = getToken();
+
+  /*
+    No token means the user has not logged in.
+  */
+  if (!token) {
+    authScreen.classList.remove(
+      "hidden"
+    );
+
+    appScreen.classList.add(
+      "hidden"
+    );
+
+    return;
+  }
+
+  try {
+    /*
+      Verify the JWT with Render.
+    */
+    const data =
+      await api("/api/me");
+
+    currentUser =
+      data.user;
 
     await showApp();
-  } catch {
-    authScreen.classList.remove("hidden");
-    appScreen.classList.add("hidden");
+  } catch (error) {
+    console.error(
+      "Authentication check failed:",
+      error
+    );
+
+    removeToken();
+
+    authScreen.classList.remove(
+      "hidden"
+    );
+
+    appScreen.classList.add(
+      "hidden"
+    );
   }
 }
 

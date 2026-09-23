@@ -1,9 +1,9 @@
 const express = require("express");
 const http = require("http");
 const path = require("path");
-const session = require("express-session");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
 const { Server } = require("socket.io");
 
@@ -14,19 +14,7 @@ const server = http.createServer(app);
   ========================================
   TeamSpace PostgreSQL Configuration
   ========================================
-
-  Local PostgreSQL:
-    PGHOST=localhost
-    PGPORT=5432
-    PGDATABASE=teamspace
-    PGUSER=postgres
-    PGPASSWORD=your_password
-
-  Render:
-    DATABASE_URL=your_online_postgresql_url
 */
-
-const isProduction = process.env.NODE_ENV === "production";
 
 const poolConfig = process.env.DATABASE_URL
   ? {
@@ -45,76 +33,82 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool(poolConfig);
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || true,
-    credentials: true
-  }
-});
-
 const PORT = process.env.PORT || 3000;
+
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  "teamspace-development-jwt-secret-change-this";
 
 /*
   ========================================
-  Middleware
+  CORS
   ========================================
 */
 
+const frontendUrl =
+  process.env.FRONTEND_URL || "http://localhost:3000";
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || true,
-    credentials: true
+    origin: frontendUrl,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sessionMiddleware = session({
-  secret:
-    process.env.SESSION_SECRET ||
-    "teamspace-development-secret-change-in-production",
-
-  resave: false,
-  saveUninitialized: false,
-
-  cookie: {
-    httpOnly: true,
-
-    /*
-      Firebase frontend and Render backend are different
-      domains in production, so SameSite=None is required.
-    */
-    sameSite: isProduction ? "none" : "lax",
-
-    secure: isProduction,
-
-    maxAge: 24 * 60 * 60 * 1000
-  }
-});
-
-app.use(sessionMiddleware);
-
-/*
-  Serve frontend files if this Express server
-  is also serving the public folder.
-*/
-app.use(express.static(path.join(__dirname, "public")));
-
 /*
   ========================================
-  Helper Functions
+  JWT Authentication
   ========================================
 */
+
+function createToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      email: user.email
+    },
+    JWT_SECRET,
+    {
+      expiresIn: "7d"
+    }
+  );
+}
 
 function requireAuth(req, res, next) {
-  if (!req.session.userId) {
+  try {
+    const authHeader = req.headers.authorization || "";
+
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        error: "You must be logged in."
+      });
+    }
+
+    const token = authHeader.substring(7).trim();
+
+    if (!token) {
+      return res.status(401).json({
+        error: "You must be logged in."
+      });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    req.userId = decoded.userId;
+
+    next();
+  } catch (error) {
+    console.error("AUTHENTICATION ERROR:", error.message);
+
     return res.status(401).json({
-      error: "You must be logged in."
+      error: "Your session has expired. Please sign in again."
     });
   }
-
-  next();
 }
 
 function publicUser(user) {
@@ -139,6 +133,7 @@ app.get("/api/health", async (req, res) => {
       ok: true,
       message: "TeamSpace backend is running.",
       database: "PostgreSQL",
+      authentication: "JWT",
       time: new Date().toISOString()
     });
   } catch (error) {
@@ -160,9 +155,11 @@ app.get("/api/health", async (req, res) => {
 app.post("/api/register", async (req, res) => {
   try {
     const name = String(req.body.name || "").trim();
+
     const email = String(req.body.email || "")
       .trim()
       .toLowerCase();
+
     const password = String(req.body.password || "");
 
     if (!name || !email || !password) {
@@ -207,18 +204,16 @@ app.post("/api/register", async (req, res) => {
 
     const user = result.rows[0];
 
-    req.session.userId = user.id;
+    const token = createToken(user);
 
     res.status(201).json({
       message: "Account created successfully.",
+      token,
       user: publicUser(user)
     });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
 
-    /*
-      PostgreSQL unique constraint protection.
-    */
     if (error.code === "23505") {
       return res.status(409).json({
         error: "An account with this email already exists."
@@ -245,6 +240,12 @@ app.post("/api/login", async (req, res) => {
 
     const password = String(req.body.password || "");
 
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Email and password are required."
+      });
+    }
+
     const result = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -258,10 +259,11 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    req.session.userId = user.id;
+    const token = createToken(user);
 
     res.json({
       message: "Login successful.",
+      token,
       user: publicUser(user)
     });
   } catch (error) {
@@ -280,18 +282,14 @@ app.post("/api/login", async (req, res) => {
 */
 
 app.post("/api/logout", requireAuth, (req, res) => {
-  req.session.destroy((error) => {
-    if (error) {
-      console.error("LOGOUT ERROR:", error);
+  /*
+    JWT authentication is stateless.
+    The frontend removes the token during logout.
+  */
 
-      return res.status(500).json({
-        error: "Unable to log out."
-      });
-    }
-
-    res.json({
-      ok: true
-    });
+  res.json({
+    ok: true,
+    message: "Logged out successfully."
   });
 });
 
@@ -309,14 +307,12 @@ app.get("/api/me", requireAuth, async (req, res) => {
       FROM users
       WHERE id = $1
       `,
-      [req.session.userId]
+      [req.userId]
     );
 
     const user = result.rows[0];
 
     if (!user) {
-      req.session.destroy(() => {});
-
       return res.status(401).json({
         error: "Account not found."
       });
@@ -349,7 +345,7 @@ app.get("/api/users", requireAuth, async (req, res) => {
       WHERE id != $1
       ORDER BY LOWER(name) ASC
       `,
-      [req.session.userId]
+      [req.userId]
     );
 
     res.json({
@@ -395,7 +391,7 @@ app.get("/api/messages/:userId", requireAuth, async (req, res) => {
         (sender_id = $2 AND receiver_id = $1)
       ORDER BY id ASC
       `,
-      [req.session.userId, otherUserId]
+      [req.userId, otherUserId]
     );
 
     res.json({
@@ -418,8 +414,10 @@ app.get("/api/messages/:userId", requireAuth, async (req, res) => {
 
 app.post("/api/messages", requireAuth, async (req, res) => {
   try {
-    const senderId = req.session.userId;
+    const senderId = req.userId;
+
     const receiverId = Number(req.body.receiverId);
+
     const body = String(req.body.body || "").trim();
 
     if (!Number.isInteger(receiverId) || receiverId <= 0) {
@@ -473,15 +471,15 @@ app.post("/api/messages", requireAuth, async (req, res) => {
 
     const message = result.rows[0];
 
-    /*
-      Send real-time message to recipient.
-    */
-    io.to(`user:${receiverId}`).emit("new-message", message);
+    io.to(`user:${receiverId}`).emit(
+      "new-message",
+      message
+    );
 
-    /*
-      Send confirmation to sender.
-    */
-    io.to(`user:${senderId}`).emit("message-sent", message);
+    io.to(`user:${senderId}`).emit(
+      "message-sent",
+      message
+    );
 
     res.status(201).json({
       message
@@ -497,6 +495,78 @@ app.post("/api/messages", requireAuth, async (req, res) => {
 
 /*
   ========================================
+  Socket.IO
+  ========================================
+*/
+
+const io = new Server(server, {
+  cors: {
+    origin: frontendUrl,
+    credentials: true
+  }
+});
+
+io.use((socket, next) => {
+  try {
+    const token =
+      socket.handshake.auth?.token;
+
+    if (!token) {
+      return next(
+        new Error("Authentication required.")
+      );
+    }
+
+    const decoded = jwt.verify(
+      token,
+      JWT_SECRET
+    );
+
+    socket.userId = decoded.userId;
+
+    next();
+  } catch (error) {
+    console.error(
+      "SOCKET AUTH ERROR:",
+      error.message
+    );
+
+    next(
+      new Error("Authentication failed.")
+    );
+  }
+});
+
+io.on("connection", (socket) => {
+  const userId = socket.userId;
+
+  socket.join(`user:${userId}`);
+
+  console.log(
+    `User ${userId} connected to Socket.IO.`
+  );
+
+  socket.on("disconnect", () => {
+    console.log(
+      `User ${userId} disconnected from Socket.IO.`
+    );
+  });
+});
+
+/*
+  ========================================
+  Static Frontend
+  ========================================
+*/
+
+app.use(
+  express.static(
+    path.join(__dirname, "public")
+  )
+);
+
+/*
+  ========================================
   SPA Fallback
   ========================================
 */
@@ -506,28 +576,13 @@ app.get("/{*splat}", (req, res, next) => {
     return next();
   }
 
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-/*
-  ========================================
-  Socket.IO
-  ========================================
-*/
-
-io.engine.use(sessionMiddleware);
-
-io.on("connection", (socket) => {
-  const userId = socket.request.session?.userId;
-
-  if (!userId) {
-    socket.disconnect(true);
-    return;
-  }
-
-  socket.join(`user:${userId}`);
-
-  console.log(`User ${userId} connected to Socket.IO.`);
+  res.sendFile(
+    path.join(
+      __dirname,
+      "public",
+      "index.html"
+    )
+  );
 });
 
 /*
@@ -547,12 +602,19 @@ async function startServer() {
     console.log(" PostgreSQL connection successful.");
     console.log(` Running on port: ${PORT}`);
     console.log(" Database: PostgreSQL");
+    console.log(" Authentication: JWT");
     console.log("========================================");
     console.log("");
 
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`TeamSpace server listening on port ${PORT}`);
-    });
+    server.listen(
+      PORT,
+      "0.0.0.0",
+      () => {
+        console.log(
+          `TeamSpace server listening on port ${PORT}`
+        );
+      }
+    );
   } catch (error) {
     console.error("");
     console.error("========================================");
@@ -561,9 +623,10 @@ async function startServer() {
     console.error(error.message);
     console.error("");
     console.error(
-      "Check your PostgreSQL settings, especially PGPASSWORD or DATABASE_URL."
+      "Check your PostgreSQL settings, especially DATABASE_URL."
     );
     console.error("");
+
     process.exit(1);
   }
 }
@@ -577,7 +640,9 @@ startServer();
 */
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM received. Closing server...");
+  console.log(
+    "SIGTERM received. Closing server..."
+  );
 
   await pool.end();
 
@@ -585,7 +650,9 @@ process.on("SIGTERM", async () => {
 });
 
 process.on("SIGINT", async () => {
-  console.log("SIGINT received. Closing server...");
+  console.log(
+    "SIGINT received. Closing server..."
+  );
 
   await pool.end();
 
