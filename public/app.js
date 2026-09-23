@@ -1,3 +1,5 @@
+const API_BASE_URL = "https://teams-88mx.onrender.com";
+
 let currentUser = null;
 let selectedUser = null;
 let socket = null;
@@ -48,17 +50,21 @@ function formatTime(dateString) {
 }
 
 async function api(url, options = {}) {
+  const fullUrl = `${API_BASE_URL}${url}`;
+
   const config = {
-    credentials: "same-origin",
+    credentials: "include",
     ...options
   };
 
   config.headers = {
-    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.body
+      ? { "Content-Type": "application/json" }
+      : {}),
     ...(options.headers || {})
   };
 
-  const response = await fetch(url, config);
+  const response = await fetch(fullUrl, config);
 
   let data = {};
 
@@ -69,7 +75,9 @@ async function api(url, options = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(data.error || `Request failed (${response.status})`);
+    throw new Error(
+      data.error || `Request failed (${response.status})`
+    );
   }
 
   return data;
@@ -153,25 +161,38 @@ async function showApp() {
   authScreen.classList.add("hidden");
   appScreen.classList.remove("hidden");
 
-  document.getElementById("myName").textContent = currentUser.name;
-  document.getElementById("myEmail").textContent = currentUser.email;
-  document.getElementById("myAvatar").textContent = initials(currentUser.name);
+  document.getElementById("myName").textContent =
+    currentUser.name;
+
+  document.getElementById("myEmail").textContent =
+    currentUser.email;
+
+  document.getElementById("myAvatar").textContent =
+    initials(currentUser.name);
 
   if (!socket) {
-    socket = io();
+    socket = io(API_BASE_URL, {
+      withCredentials: true
+    });
 
     socket.on("connect", () => {
-      console.log("Connected to TeamSpace real-time server.");
+      console.log(
+        "Connected to TeamSpace real-time server."
+      );
     });
 
     socket.on("connect_error", error => {
-      console.error("Socket.IO error:", error.message);
+      console.error(
+        "Socket.IO error:",
+        error.message
+      );
     });
 
     socket.on("new-message", message => {
       if (
         selectedUser &&
-        Number(message.senderId) === Number(selectedUser.id)
+        Number(message.senderId) ===
+          Number(selectedUser.id)
       ) {
         renderMessages([message], true);
       }
@@ -222,7 +243,9 @@ async function loadUsers() {
       item.appendChild(avatar);
       item.appendChild(info);
 
-      item.addEventListener("click", () => selectUser(user));
+      item.addEventListener("click", () =>
+        selectUser(user)
+      );
 
       userList.appendChild(item);
     });
@@ -256,7 +279,9 @@ async function selectUser(user) {
   messageInput.focus();
 
   try {
-    const data = await api(`/api/messages/${user.id}`);
+    const data = await api(
+      `/api/messages/${user.id}`
+    );
 
     messagesBox.innerHTML = "";
 
@@ -280,7 +305,10 @@ function renderMessages(messages, append) {
       <div class="empty-chat">
         <div class="empty-icon">👋</div>
         <h2>Start a conversation</h2>
-        <p>Send ${escapeHtml(selectedUser.name)} your first message.</p>
+        <p>
+          Send ${escapeHtml(selectedUser.name)}
+          your first message.
+        </p>
       </div>
     `;
     return;
@@ -288,9 +316,11 @@ function renderMessages(messages, append) {
 
   messages.forEach(message => {
     const mine =
-      Number(message.senderId) === Number(currentUser.id);
+      Number(message.senderId) ===
+      Number(currentUser.id);
 
     const row = document.createElement("div");
+
     row.className =
       `message-row${mine ? " mine" : ""}`;
 
@@ -303,7 +333,9 @@ function renderMessages(messages, append) {
 
     const time = document.createElement("div");
     time.className = "message-time";
-    time.textContent = formatTime(message.createdAt);
+    time.textContent = formatTime(
+      message.createdAt
+    );
 
     bubble.appendChild(body);
     bubble.appendChild(time);
@@ -312,7 +344,8 @@ function renderMessages(messages, append) {
     messagesBox.appendChild(row);
   });
 
-  messagesBox.scrollTop = messagesBox.scrollHeight;
+  messagesBox.scrollTop =
+    messagesBox.scrollHeight;
 }
 
 messageForm.addEventListener("submit", async event => {
@@ -343,7 +376,10 @@ messageForm.addEventListener("submit", async event => {
 });
 
 messageInput.addEventListener("keydown", event => {
-  if (event.key === "Enter" && !event.shiftKey) {
+  if (
+    event.key === "Enter" &&
+    !event.shiftKey
+  ) {
     event.preventDefault();
     messageForm.requestSubmit();
   }
