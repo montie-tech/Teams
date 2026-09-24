@@ -1,4 +1,3 @@
-```javascript
 const API_BASE_URL = window.location.hostname === "localhost"
   ? ""
   : "https://teams-88mx.onrender.com";
@@ -7,64 +6,38 @@ let currentUser = null;
 let selectedUser = null;
 let socket = null;
 let authMode = "login";
+let authToken = null;
 
-/*
-  ========================================
-  DOM Elements
-  ========================================
-*/
+const TOKEN_KEY = "teamspace_token";
 
+// DOM elements
 const authScreen = document.getElementById("authScreen");
 const appScreen = document.getElementById("appScreen");
-
 const authForm = document.getElementById("authForm");
 const authError = document.getElementById("authError");
 const authButton = document.getElementById("authButton");
-
 const nameGroup = document.getElementById("nameGroup");
 const nameInput = document.getElementById("name");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
-
 const userList = document.getElementById("userList");
 const messagesBox = document.getElementById("messages");
 const messageForm = document.getElementById("messageForm");
 const messageInput = document.getElementById("messageInput");
-
 const chatUserName = document.getElementById("chatUserName");
 const chatStatus = document.getElementById("chatStatus");
 const chatUserAvatar = document.getElementById("chatUserAvatar");
 
-/*
-  ========================================
-  Authentication Token
-  ========================================
-*/
-
-const TOKEN_KEY = "teamspace_token";
-
-/*
-  Keep the token in memory as well as
-  localStorage.
-
-  This prevents the application from
-  depending entirely on localStorage
-  immediately after login.
-*/
-let authToken = null;
-
+// Authentication token helpers
 function getToken() {
   return authToken || localStorage.getItem(TOKEN_KEY);
 }
 
 function saveToken(token) {
-  if (!token) {
-    return false;
-  }
+  if (!token) return false;
 
   authToken = token;
   localStorage.setItem(TOKEN_KEY, token);
-
   return true;
 }
 
@@ -73,14 +46,9 @@ function removeToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-/*
-  ========================================
-  Helpers
-  ========================================
-*/
-
+// General helpers
 function initials(name) {
-  return String(name)
+  return String(name || "")
     .trim()
     .split(/\s+/)
     .filter(Boolean)
@@ -91,7 +59,6 @@ function initials(name) {
 
 function formatTime(dateString) {
   const raw = String(dateString || "");
-
   let date;
 
   if (raw.includes("T")) {
@@ -100,9 +67,7 @@ function formatTime(dateString) {
     date = new Date(raw.replace(" ", "T") + "Z");
   }
 
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
+  if (Number.isNaN(date.getTime())) return "";
 
   return date.toLocaleTimeString([], {
     hour: "2-digit",
@@ -110,35 +75,27 @@ function formatTime(dateString) {
   });
 }
 
-/*
-  ========================================
-  API Helper
-  ========================================
-*/
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
+// API helper
 async function api(url, options = {}, tokenOverride = null) {
-  const fullUrl = `${API_BASE_URL}${url}`;
-
-  /*
-    Use the explicitly supplied token first.
-    Otherwise use the current authentication token.
-  */
+  const fullUrl = API_BASE_URL + url;
   const token = tokenOverride || getToken();
 
   const headers = {
-    ...(options.body
-      ? {
-          "Content-Type": "application/json"
-        }
-      : {}),
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {})
   };
 
-  /*
-    Attach JWT whenever one exists.
-  */
   if (token) {
-    headers.Authorization = `Bearer ${token}`;
+    headers.Authorization = "Bearer " + token;
   }
 
   const config = {
@@ -158,34 +115,23 @@ async function api(url, options = {}, tokenOverride = null) {
   }
 
   if (!response.ok) {
-    /*
-      Only remove the authentication token
-      when an authenticated request actually
-      fails with 401.
+    // Do not clear an existing token on a failed login/register request.
+    const isAuthRequest =
+      url === "/api/login" || url === "/api/register";
 
-      Login/register requests are allowed
-      to return 401 without affecting an
-      existing token.
-    */
-    if (response.status === 401 && token) {
+    if (response.status === 401 && token && !isAuthRequest) {
       removeToken();
     }
 
     throw new Error(
-      data.error ||
-      `Request failed (${response.status})`
+      data.error || "Request failed (" + response.status + ")"
     );
   }
 
   return data;
 }
 
-/*
-  ========================================
-  Login / Register Tabs
-  ========================================
-*/
-
+// Login and register tabs
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach(item => {
@@ -193,7 +139,6 @@ document.querySelectorAll(".tab").forEach(tab => {
     });
 
     tab.classList.add("active");
-
     authMode = tab.dataset.mode;
 
     nameGroup.classList.toggle(
@@ -202,25 +147,16 @@ document.querySelectorAll(".tab").forEach(tab => {
     );
 
     authButton.textContent =
-      authMode === "register"
-        ? "Create account"
-        : "Sign in";
+      authMode === "register" ? "Create account" : "Sign in";
 
     passwordInput.autocomplete =
-      authMode === "register"
-        ? "new-password"
-        : "current-password";
+      authMode === "register" ? "new-password" : "current-password";
 
     authError.textContent = "";
   });
 });
 
-/*
-  ========================================
-  Login / Registration
-  ========================================
-*/
-
+// Login and registration
 authForm.addEventListener("submit", async event => {
   event.preventDefault();
 
@@ -228,17 +164,12 @@ authForm.addEventListener("submit", async event => {
   authButton.disabled = true;
 
   const originalText = authButton.textContent;
-
   authButton.textContent =
-    authMode === "register"
-      ? "Creating account..."
-      : "Signing in...";
+    authMode === "register" ? "Creating account..." : "Signing in...";
 
   try {
     const endpoint =
-      authMode === "register"
-        ? "/api/register"
-        : "/api/login";
+      authMode === "register" ? "/api/register" : "/api/login";
 
     const payload = {
       email: emailInput.value.trim(),
@@ -249,202 +180,117 @@ authForm.addEventListener("submit", async event => {
       payload.name = nameInput.value.trim();
     }
 
-    /*
-      Login/register does not need an existing JWT.
-    */
+    // Login/register requests do not need an existing token.
     const data = await api(endpoint, {
       method: "POST",
       body: JSON.stringify(payload)
-    });
+    }, null);
 
-    /*
-      Make absolutely sure the backend returned
-      an authentication token.
-    */
     if (!data.token) {
       throw new Error(
-        "Login succeeded but no authentication token was returned."
+        "The server did not return an authentication token. Please try again."
       );
     }
 
-    /*
-      Save the JWT both in memory and localStorage.
-    */
-    const tokenSaved = saveToken(data.token);
-
-    if (!tokenSaved || !getToken()) {
-      throw new Error(
-        "Authentication token could not be saved."
-      );
+    if (!saveToken(data.token)) {
+      throw new Error("Could not save the authentication token.");
     }
 
-    console.log(
-      "Authentication token saved successfully."
-    );
+    if (!data.user) {
+      throw new Error("The server did not return the user profile.");
+    }
 
     currentUser = data.user;
+    console.log("Authentication token saved successfully.");
 
-    /*
-      Pass the freshly received token directly
-      to showApp().
-
-      This avoids depending on localStorage
-      during the immediate login sequence.
-    */
+    // Pass the freshly received token directly into the app.
     await showApp(data.token);
 
   } catch (error) {
-    console.error(error);
-
-    authError.textContent =
-      error.message;
+    console.error("Sign-in or registration error:", error);
+    authError.textContent = error.message || "Unable to sign in.";
   } finally {
     authButton.disabled = false;
     authButton.textContent = originalText;
   }
 });
 
-/*
-  ========================================
-  Show Application
-  ========================================
-*/
-
+// Show the main application
 async function showApp(tokenOverride = null) {
-  /*
-    Make sure we have an authenticated user.
-  */
   if (!currentUser) {
-    throw new Error(
-      "Unable to open TeamSpace because the user is not authenticated."
-    );
+    throw new Error("Unable to open TeamSpace: user profile is missing.");
   }
 
   authScreen.classList.add("hidden");
   appScreen.classList.remove("hidden");
 
   document.getElementById("myName").textContent =
-    currentUser.name;
+    currentUser.name || "";
 
   document.getElementById("myEmail").textContent =
-    currentUser.email;
+    currentUser.email || "";
 
   document.getElementById("myAvatar").textContent =
     initials(currentUser.name);
 
-  /*
-    Load contacts FIRST using the fresh JWT.
-  */
+  // Load contacts with the newly received token before connecting sockets.
   await loadUsers(tokenOverride);
-
-  /*
-    Connect Socket.IO AFTER authentication
-    and contacts have loaded.
-  */
   connectSocket(tokenOverride);
 }
 
-/*
-  ========================================
-  Socket.IO
-  ========================================
-*/
-
+// Socket.IO connection
 function connectSocket(tokenOverride = null) {
-  /*
-    Use the freshly supplied token first.
-  */
-  const token =
-    tokenOverride ||
-    getToken();
+  const token = tokenOverride || getToken();
 
   if (!token) {
-    console.warn(
-      "No authentication token available for Socket.IO."
-    );
-
+    console.warn("No authentication token available for Socket.IO.");
     return;
   }
 
-  /*
-    Don't create duplicate connections.
-  */
-  if (socket) {
+  if (socket) return;
+
+  if (typeof io !== "function") {
+    console.error(
+      "Socket.IO client did not load. Check the Socket.IO script in index.html."
+    );
     return;
   }
 
   socket = io(API_BASE_URL, {
-    auth: {
-      token
-    },
+    auth: { token },
     withCredentials: true
   });
 
   socket.on("connect", () => {
-    console.log(
-      "Connected to TeamSpace real-time server."
-    );
+    console.log("Connected to TeamSpace real-time server.");
   });
 
   socket.on("connect_error", error => {
-    console.error(
-      "Socket.IO error:",
-      error.message
-    );
+    console.error("Socket.IO error:", error.message);
   });
 
   socket.on("new-message", message => {
-    /*
-      Only display the message immediately if
-      the sender is the currently selected person.
-    */
     if (
       selectedUser &&
-      Number(message.senderId) ===
-        Number(selectedUser.id)
+      Number(message.senderId) === Number(selectedUser.id)
     ) {
       renderMessages([message], true);
     }
   });
 
   socket.on("message-sent", message => {
-    /*
-      The sender already renders the response
-      returned by POST /api/messages.
-
-      Therefore we don't render this event again,
-      otherwise the sender would see duplicates.
-    */
-    console.log(
-      "Message sent successfully:",
-      message
-    );
+    console.log("Message sent successfully:", message);
   });
 
   socket.on("disconnect", reason => {
-    console.log(
-      "Disconnected from TeamSpace real-time server:",
-      reason
-    );
+    console.log("Disconnected from TeamSpace:", reason);
   });
 }
 
-/*
-  ========================================
-  Load Users
-  ========================================
-*/
-
+// Load contacts
 async function loadUsers(tokenOverride = null) {
   try {
-    /*
-      Explicitly pass the fresh JWT when available.
-    */
-    const data = await api(
-      "/api/users",
-      {},
-      tokenOverride
-    );
+    const data = await api("/api/users", {}, tokenOverride);
 
     userList.innerHTML = "";
 
@@ -456,36 +302,29 @@ async function loadUsers(tokenOverride = null) {
           and create a second account to test messaging.
         </div>
       `;
-
       return;
     }
 
     data.users.forEach(user => {
       const item = document.createElement("div");
-
       item.className = "user-item";
       item.dataset.id = user.id;
 
       const avatar = document.createElement("div");
-
       avatar.className = "user-avatar";
       avatar.textContent = initials(user.name);
 
       const info = document.createElement("div");
-
       info.className = "user-info";
 
       const name = document.createElement("strong");
-
       name.textContent = user.name;
 
       const email = document.createElement("span");
-
       email.textContent = user.email;
 
       info.appendChild(name);
       info.appendChild(email);
-
       item.appendChild(avatar);
       item.appendChild(info);
 
@@ -497,18 +336,15 @@ async function loadUsers(tokenOverride = null) {
     });
 
   } catch (error) {
-    console.error(
-      "Unable to load users:",
-      error
-    );
+    console.error("Unable to load users:", error);
 
-    /*
-      Authentication failure.
-    */
+    const message = String(error.message || "");
+
     if (
-      error.message.includes("session has expired") ||
-      error.message.includes("logged in") ||
-      error.message.includes("authentication")
+      message.toLowerCase().includes("session has expired") ||
+      message.toLowerCase().includes("logged in") ||
+      message.toLowerCase().includes("authentication") ||
+      message.toLowerCase().includes("unauthorized")
     ) {
       handleAuthenticationFailure();
       return;
@@ -523,70 +359,42 @@ async function loadUsers(tokenOverride = null) {
   }
 }
 
-/*
-  ========================================
-  Select User
-  ========================================
-*/
-
+// Select a contact and load conversation
 async function selectUser(user) {
   selectedUser = user;
 
   document.querySelectorAll(".user-item").forEach(item => {
     item.classList.toggle(
       "selected",
-      Number(item.dataset.id) ===
-        Number(user.id)
+      Number(item.dataset.id) === Number(user.id)
     );
   });
 
-  chatUserName.textContent =
-    user.name;
-
-  chatStatus.textContent =
-    user.email;
-
-  chatUserAvatar.textContent =
-    initials(user.name);
+  chatUserName.textContent = user.name || "";
+  chatStatus.textContent = user.email || "";
+  chatUserAvatar.textContent = initials(user.name);
 
   messageForm.classList.remove("hidden");
-
   messageInput.focus();
 
   try {
-    const data = await api(
-      `/api/messages/${user.id}`
-    );
+    const data = await api("/api/messages/" + encodeURIComponent(user.id));
 
     messagesBox.innerHTML = "";
-
-    renderMessages(
-      data.messages,
-      false
-    );
+    renderMessages(data.messages || [], false);
 
   } catch (error) {
-    console.error(
-      "Unable to load messages:",
-      error
-    );
+    console.error("Unable to load messages:", error);
 
     messagesBox.innerHTML = `
       <div class="empty-chat">
-        <p>
-          ${escapeHtml(error.message)}
-        </p>
+        <p>${escapeHtml(error.message)}</p>
       </div>
     `;
   }
 }
 
-/*
-  ========================================
-  Render Messages
-  ========================================
-*/
-
+// Render chat messages
 function renderMessages(messages, append) {
   if (!append) {
     messagesBox.innerHTML = "";
@@ -596,282 +404,130 @@ function renderMessages(messages, append) {
     messagesBox.innerHTML = `
       <div class="empty-chat">
         <div class="empty-icon">👋</div>
-
-        <h2>
-          Start a conversation
-        </h2>
-
+        <h2>Start a conversation</h2>
         <p>
-          Send
-          ${escapeHtml(selectedUser.name)}
+          Send ${escapeHtml(selectedUser ? selectedUser.name : "this person")}
           your first message.
         </p>
       </div>
     `;
-
     return;
   }
 
   messages.forEach(message => {
     const mine =
-      Number(message.senderId) ===
-      Number(currentUser.id);
+      Number(message.senderId) === Number(currentUser.id);
 
-    const row =
-      document.createElement("div");
+    const row = document.createElement("div");
+    row.className = "message-row" + (mine ? " mine" : "");
 
-    row.className =
-      `message-row${mine ? " mine" : ""}`;
-
-    const bubble =
-      document.createElement("div");
-
+    const bubble = document.createElement("div");
     bubble.className = "message";
 
-    const body =
-      document.createElement("div");
+    const body = document.createElement("div");
+    body.className = "message-body";
+    body.textContent = message.body || "";
 
-    body.className =
-      "message-body";
-
-    body.textContent =
-      message.body;
-
-    const time =
-      document.createElement("div");
-
-    time.className =
-      "message-time";
-
-    time.textContent =
-      formatTime(
-        message.createdAt
-      );
+    const time = document.createElement("div");
+    time.className = "message-time";
+    time.textContent = formatTime(message.createdAt);
 
     bubble.appendChild(body);
     bubble.appendChild(time);
-
     row.appendChild(bubble);
-
     messagesBox.appendChild(row);
   });
 
-  messagesBox.scrollTop =
-    messagesBox.scrollHeight;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
-/*
-  ========================================
-  Send Message
-  ========================================
-*/
+// Send a message
+messageForm.addEventListener("submit", async event => {
+  event.preventDefault();
 
-messageForm.addEventListener(
-  "submit",
-  async event => {
+  const body = messageInput.value.trim();
+
+  if (!body || !selectedUser) return;
+
+  messageInput.value = "";
+
+  try {
+    const data = await api("/api/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        receiverId: selectedUser.id,
+        body
+      })
+    });
+
+    if (data.message) {
+      renderMessages([data.message], true);
+    }
+
+  } catch (error) {
+    console.error("Unable to send message:", error);
+    messageInput.value = body;
+    alert(error.message);
+  }
+});
+
+// Enter sends; Shift+Enter inserts a line break.
+messageInput.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
-
-    const body =
-      messageInput.value.trim();
-
-    if (!body || !selectedUser) {
-      return;
-    }
-
-    /*
-      Clear input immediately.
-    */
-    messageInput.value = "";
-
-    try {
-      const data = await api(
-        "/api/messages",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            receiverId:
-              selectedUser.id,
-
-            body
-          })
-        }
-      );
-
-      /*
-        Render the message returned by
-        the backend.
-      */
-      renderMessages(
-        [data.message],
-        true
-      );
-
-    } catch (error) {
-      console.error(
-        "Unable to send message:",
-        error
-      );
-
-      /*
-        Restore the text if sending fails.
-      */
-      messageInput.value = body;
-
-      alert(error.message);
-    }
+    messageForm.requestSubmit();
   }
-);
+});
 
-/*
-  ========================================
-  Enter to Send
-  ========================================
-*/
+// Refresh contacts
+document.getElementById("refreshUsers").addEventListener("click", () => {
+  loadUsers();
+});
 
-messageInput.addEventListener(
-  "keydown",
-  event => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-      event.preventDefault();
+// Log out
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try {
+    await api("/api/logout", {
+      method: "POST"
+    });
+  } catch (error) {
+    console.error("Logout request failed:", error);
+  } finally {
+    removeToken();
 
-      messageForm.requestSubmit();
+    if (socket) {
+      socket.disconnect();
+      socket = null;
     }
+
+    currentUser = null;
+    selectedUser = null;
+
+    appScreen.classList.add("hidden");
+    authScreen.classList.remove("hidden");
+
+    authForm.reset();
+    authError.textContent = "";
+    authMode = "login";
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.classList.remove("active");
+    });
+
+    const loginTab = document.querySelector(
+      '.tab[data-mode="login"]'
+    );
+
+    if (loginTab) {
+      loginTab.classList.add("active");
+    }
+
+    nameGroup.classList.add("hidden");
+    authButton.textContent = "Sign in";
   }
-);
+});
 
-/*
-  ========================================
-  Refresh Users
-  ========================================
-*/
-
-document
-  .getElementById("refreshUsers")
-  .addEventListener(
-    "click",
-    () => loadUsers()
-  );
-
-/*
-  ========================================
-  Logout
-  ========================================
-*/
-
-document
-  .getElementById("logoutBtn")
-  .addEventListener(
-    "click",
-    async () => {
-      try {
-        /*
-          Tell the backend about logout.
-        */
-        await api(
-          "/api/logout",
-          {
-            method: "POST"
-          }
-        );
-
-      } catch (error) {
-        console.error(
-          "Logout request failed:",
-          error
-        );
-
-      } finally {
-        /*
-          Remove JWT from memory and
-          localStorage.
-        */
-        removeToken();
-
-        /*
-          Close Socket.IO.
-        */
-        if (socket) {
-          socket.disconnect();
-          socket = null;
-        }
-
-        currentUser = null;
-        selectedUser = null;
-
-        /*
-          Return to login screen.
-        */
-        appScreen.classList.add(
-          "hidden"
-        );
-
-        authScreen.classList.remove(
-          "hidden"
-        );
-
-        authForm.reset();
-
-        authError.textContent = "";
-
-        /*
-          Reset to login mode.
-        */
-        authMode = "login";
-
-        document
-          .querySelectorAll(".tab")
-          .forEach(tab => {
-            tab.classList.remove(
-              "active"
-            );
-          });
-
-        const loginTab =
-          document.querySelector(
-            '.tab[data-mode="login"]'
-          );
-
-        if (loginTab) {
-          loginTab.classList.add(
-            "active"
-          );
-        }
-
-        nameGroup.classList.add(
-          "hidden"
-        );
-
-        authButton.textContent =
-          "Sign in";
-      }
-    }
-  );
-
-/*
-  ========================================
-  Escape HTML
-  ========================================
-*/
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-/*
-  ========================================
-  Authentication Failure
-  ========================================
-*/
-
+// Handle expired/invalid authentication
 function handleAuthenticationFailure() {
   removeToken();
 
@@ -890,19 +546,9 @@ function handleAuthenticationFailure() {
     "Your session has expired. Please sign in again.";
 }
 
-/*
-  ========================================
-  Application Initialization
-  ========================================
-*/
-
+// Initialize app and restore existing login if a token is stored.
 async function init() {
-  /*
-    Load an existing JWT from localStorage
-    into memory.
-  */
-  const storedToken =
-    localStorage.getItem(TOKEN_KEY);
+  const storedToken = localStorage.getItem(TOKEN_KEY);
 
   if (storedToken) {
     authToken = storedToken;
@@ -910,54 +556,25 @@ async function init() {
 
   const token = getToken();
 
-  /*
-    No token means the user has not logged in.
-  */
   if (!token) {
-    authScreen.classList.remove(
-      "hidden"
-    );
-
-    appScreen.classList.add(
-      "hidden"
-    );
-
+    authScreen.classList.remove("hidden");
+    appScreen.classList.add("hidden");
     return;
   }
 
   try {
-    /*
-      Verify the JWT with Render.
-    */
-    const data =
-      await api(
-        "/api/me",
-        {},
-        token
-      );
+    const data = await api("/api/me", {}, token);
 
-    currentUser =
-      data.user;
-
+    currentUser = data.user;
     await showApp(token);
 
   } catch (error) {
-    console.error(
-      "Authentication check failed:",
-      error
-    );
-
+    console.error("Authentication check failed:", error);
     removeToken();
 
-    authScreen.classList.remove(
-      "hidden"
-    );
-
-    appScreen.classList.add(
-      "hidden"
-    );
+    authScreen.classList.remove("hidden");
+    appScreen.classList.add("hidden");
   }
 }
 
 init();
-```
