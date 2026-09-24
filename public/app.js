@@ -1,10 +1,18 @@
+```javascript
 const API_BASE_URL = window.location.hostname === "localhost"
   ? ""
-  : "https://teams-88mx.onrender.com";let currentUser = null;
+  : "https://teams-88mx.onrender.com";
 
+let currentUser = null;
 let selectedUser = null;
 let socket = null;
 let authMode = "login";
+
+/*
+  ========================================
+  DOM Elements
+  ========================================
+*/
 
 const authScreen = document.getElementById("authScreen");
 const appScreen = document.getElementById("appScreen");
@@ -35,17 +43,33 @@ const chatUserAvatar = document.getElementById("chatUserAvatar");
 
 const TOKEN_KEY = "teamspace_token";
 
+/*
+  Keep the token in memory as well as
+  localStorage.
+
+  This prevents the application from
+  depending entirely on localStorage
+  immediately after login.
+*/
+let authToken = null;
+
 function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  return authToken || localStorage.getItem(TOKEN_KEY);
 }
 
 function saveToken(token) {
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
+  if (!token) {
+    return false;
   }
+
+  authToken = token;
+  localStorage.setItem(TOKEN_KEY, token);
+
+  return true;
 }
 
 function removeToken() {
+  authToken = null;
   localStorage.removeItem(TOKEN_KEY);
 }
 
@@ -92,10 +116,14 @@ function formatTime(dateString) {
   ========================================
 */
 
-async function api(url, options = {}) {
+async function api(url, options = {}, tokenOverride = null) {
   const fullUrl = `${API_BASE_URL}${url}`;
 
-  const token = getToken();
+  /*
+    Use the explicitly supplied token first.
+    Otherwise use the current authentication token.
+  */
+  const token = tokenOverride || getToken();
 
   const headers = {
     ...(options.body
@@ -106,6 +134,9 @@ async function api(url, options = {}) {
     ...(options.headers || {})
   };
 
+  /*
+    Attach JWT whenever one exists.
+  */
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -127,13 +158,22 @@ async function api(url, options = {}) {
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
+    /*
+      Only remove the authentication token
+      when an authenticated request actually
+      fails with 401.
+
+      Login/register requests are allowed
+      to return 401 without affecting an
+      existing token.
+    */
+    if (response.status === 401 && token) {
       removeToken();
     }
 
     throw new Error(
       data.error ||
-        `Request failed (${response.status})`
+      `Request failed (${response.status})`
     );
   }
 
@@ -209,22 +249,50 @@ authForm.addEventListener("submit", async event => {
       payload.name = nameInput.value.trim();
     }
 
+    /*
+      Login/register does not need an existing JWT.
+    */
     const data = await api(endpoint, {
       method: "POST",
       body: JSON.stringify(payload)
     });
 
     /*
-      Save the JWT returned by Render.
+      Make absolutely sure the backend returned
+      an authentication token.
     */
-    saveToken(data.token);
+    if (!data.token) {
+      throw new Error(
+        "Login succeeded but no authentication token was returned."
+      );
+    }
+
+    /*
+      Save the JWT both in memory and localStorage.
+    */
+    const tokenSaved = saveToken(data.token);
+
+    if (!tokenSaved || !getToken()) {
+      throw new Error(
+        "Authentication token could not be saved."
+      );
+    }
+
+    console.log(
+      "Authentication token saved successfully."
+    );
 
     currentUser = data.user;
 
     /*
-      Show the TeamSpace application.
+      Pass the freshly received token directly
+      to showApp().
+
+      This avoids depending on localStorage
+      during the immediate login sequence.
     */
-    await showApp();
+    await showApp(data.token);
+
   } catch (error) {
     console.error(error);
 
@@ -242,7 +310,16 @@ authForm.addEventListener("submit", async event => {
   ========================================
 */
 
-async function showApp() {
+async function showApp(tokenOverride = null) {
+  /*
+    Make sure we have an authenticated user.
+  */
+  if (!currentUser) {
+    throw new Error(
+      "Unable to open TeamSpace because the user is not authenticated."
+    );
+  }
+
   authScreen.classList.add("hidden");
   appScreen.classList.remove("hidden");
 
@@ -256,14 +333,15 @@ async function showApp() {
     initials(currentUser.name);
 
   /*
-    Connect Socket.IO using JWT.
+    Load contacts FIRST using the fresh JWT.
   */
-  connectSocket();
+  await loadUsers(tokenOverride);
 
   /*
-    Load all registered users except yourself.
+    Connect Socket.IO AFTER authentication
+    and contacts have loaded.
   */
-  await loadUsers();
+  connectSocket(tokenOverride);
 }
 
 /*
@@ -272,13 +350,19 @@ async function showApp() {
   ========================================
 */
 
-function connectSocket() {
-  const token = getToken();
+function connectSocket(tokenOverride = null) {
+  /*
+    Use the freshly supplied token first.
+  */
+  const token =
+    tokenOverride ||
+    getToken();
 
   if (!token) {
     console.warn(
       "No authentication token available for Socket.IO."
     );
+
     return;
   }
 
@@ -351,9 +435,16 @@ function connectSocket() {
   ========================================
 */
 
-async function loadUsers() {
+async function loadUsers(tokenOverride = null) {
   try {
-    const data = await api("/api/users");
+    /*
+      Explicitly pass the fresh JWT when available.
+    */
+    const data = await api(
+      "/api/users",
+      {},
+      tokenOverride
+    );
 
     userList.innerHTML = "";
 
@@ -404,6 +495,7 @@ async function loadUsers() {
 
       userList.appendChild(item);
     });
+
   } catch (error) {
     console.error(
       "Unable to load users:",
@@ -411,12 +503,12 @@ async function loadUsers() {
     );
 
     /*
-      If the JWT expired or is invalid,
-      return to login.
+      Authentication failure.
     */
     if (
       error.message.includes("session has expired") ||
-      error.message.includes("logged in")
+      error.message.includes("logged in") ||
+      error.message.includes("authentication")
     ) {
       handleAuthenticationFailure();
       return;
@@ -472,6 +564,7 @@ async function selectUser(user) {
       data.messages,
       false
     );
+
   } catch (error) {
     console.error(
       "Unable to load messages:",
@@ -613,6 +706,7 @@ messageForm.addEventListener(
         [data.message],
         true
       );
+
     } catch (error) {
       console.error(
         "Unable to send message:",
@@ -659,7 +753,7 @@ document
   .getElementById("refreshUsers")
   .addEventListener(
     "click",
-    loadUsers
+    () => loadUsers()
   );
 
 /*
@@ -683,15 +777,17 @@ document
             method: "POST"
           }
         );
+
       } catch (error) {
         console.error(
           "Logout request failed:",
           error
         );
+
       } finally {
         /*
-          JWT is stored in localStorage,
-          so we must remove it ourselves.
+          Remove JWT from memory and
+          localStorage.
         */
         removeToken();
 
@@ -801,6 +897,17 @@ function handleAuthenticationFailure() {
 */
 
 async function init() {
+  /*
+    Load an existing JWT from localStorage
+    into memory.
+  */
+  const storedToken =
+    localStorage.getItem(TOKEN_KEY);
+
+  if (storedToken) {
+    authToken = storedToken;
+  }
+
   const token = getToken();
 
   /*
@@ -823,12 +930,17 @@ async function init() {
       Verify the JWT with Render.
     */
     const data =
-      await api("/api/me");
+      await api(
+        "/api/me",
+        {},
+        token
+      );
 
     currentUser =
       data.user;
 
-    await showApp();
+    await showApp(token);
+
   } catch (error) {
     console.error(
       "Authentication check failed:",
@@ -848,3 +960,4 @@ async function init() {
 }
 
 init();
+```
