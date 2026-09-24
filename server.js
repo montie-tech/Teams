@@ -11,9 +11,7 @@ const app = express();
 const server = http.createServer(app);
 
 /*
-  ========================================
-  TeamSpace PostgreSQL Configuration
-  ========================================
+TeamSpace PostgreSQL Configuration
 */
 
 const poolConfig = process.env.DATABASE_URL
@@ -40,30 +38,37 @@ const JWT_SECRET =
   "teamspace-development-jwt-secret-change-this";
 
 /*
-  ========================================
-  CORS
-  ========================================
+CORS
 */
 
-const frontendUrl =
-  process.env.FRONTEND_URL || "http://localhost:3000";
+const allowedOrigins = [
+  "https://teams-3d363.web.app",
+  "https://teams-3d363.firebaseapp.com",
+  "http://localhost:3000"
+];
 
-app.use(
-  cors({
-    origin: frontendUrl,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests without an Origin header
+    // and requests from approved frontend domains.
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /*
-  ========================================
-  JWT Authentication
-  ========================================
+JWT Authentication
 */
 
 function createToken(user) {
@@ -120,9 +125,7 @@ function publicUser(user) {
 }
 
 /*
-  ========================================
-  Health Check
-  ========================================
+Health Check
 */
 
 app.get("/api/health", async (req, res) => {
@@ -147,9 +150,7 @@ app.get("/api/health", async (req, res) => {
 });
 
 /*
-  ========================================
-  Register
-  ========================================
+Register
 */
 
 app.post("/api/register", async (req, res) => {
@@ -227,9 +228,7 @@ app.post("/api/register", async (req, res) => {
 });
 
 /*
-  ========================================
-  Login
-  ========================================
+Login
 */
 
 app.post("/api/login", async (req, res) => {
@@ -276,15 +275,13 @@ app.post("/api/login", async (req, res) => {
 });
 
 /*
-  ========================================
-  Logout
-  ========================================
+Logout
 */
 
 app.post("/api/logout", requireAuth, (req, res) => {
   /*
-    JWT authentication is stateless.
-    The frontend removes the token during logout.
+  JWT authentication is stateless.
+  The frontend removes the token during logout.
   */
 
   res.json({
@@ -294,9 +291,7 @@ app.post("/api/logout", requireAuth, (req, res) => {
 });
 
 /*
-  ========================================
-  Current User
-  ========================================
+Current User
 */
 
 app.get("/api/me", requireAuth, async (req, res) => {
@@ -331,9 +326,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
 });
 
 /*
-  ========================================
-  Users
-  ========================================
+Users
 */
 
 app.get("/api/users", requireAuth, async (req, res) => {
@@ -361,9 +354,7 @@ app.get("/api/users", requireAuth, async (req, res) => {
 });
 
 /*
-  ========================================
-  Messages
-  ========================================
+Messages
 */
 
 app.get("/api/messages/:userId", requireAuth, async (req, res) => {
@@ -407,9 +398,7 @@ app.get("/api/messages/:userId", requireAuth, async (req, res) => {
 });
 
 /*
-  ========================================
-  Send Message
-  ========================================
+Send Message
 */
 
 app.post("/api/messages", requireAuth, async (req, res) => {
@@ -494,15 +483,14 @@ app.post("/api/messages", requireAuth, async (req, res) => {
 });
 
 /*
-  ========================================
-  Socket.IO
-  ========================================
+Socket.IO
 */
 
 const io = new Server(server, {
   cors: {
-    origin: frontendUrl,
-    credentials: true
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST"]
   }
 });
 
@@ -554,9 +542,7 @@ io.on("connection", (socket) => {
 });
 
 /*
-  ========================================
-  Static Frontend
-  ========================================
+Static Frontend
 */
 
 app.use(
@@ -566,9 +552,7 @@ app.use(
 );
 
 /*
-  ========================================
-  SPA Fallback
-  ========================================
+SPA Fallback
 */
 
 app.get("/{*splat}", (req, res, next) => {
@@ -586,9 +570,7 @@ app.get("/{*splat}", (req, res, next) => {
 });
 
 /*
-  ========================================
-  Database + Server Startup
-  ========================================
+Database + Server Startup
 */
 
 async function startServer() {
@@ -634,9 +616,7 @@ async function startServer() {
 startServer();
 
 /*
-  ========================================
-  Graceful Shutdown
-  ========================================
+Graceful Shutdown
 */
 
 process.on("SIGTERM", async () => {
