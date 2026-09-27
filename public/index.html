@@ -56,6 +56,81 @@
 
     }
 
+    ```css
+/* =====================================================
+   LANDING PAGE BRAND
+====================================================== */
+
+.landing-brand-text {
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  line-height: 1.1;
+
+}
+
+
+/* TEAMS CHAT */
+
+.landing-teams-chat {
+
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 30px;
+
+  font-weight: 900;
+
+  letter-spacing: -0.5px;
+
+}
+
+
+/* CONNECT CHAT */
+
+.landing-connect-chat {
+
+  display: block;
+
+  margin-top: 4px;
+
+  color: #ffffff;
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.2px;
+
+}
+
+
+/* MOBILE */
+
+@media (max-width: 480px) {
+
+  .landing-teams-chat {
+
+    font-size: 26px;
+
+  }
+
+
+  .landing-connect-chat {
+
+    font-size: 15px;
+
+  }
+
+}
+
+
+
 
     /* =====================================================
        APPLICATION LAYOUT
@@ -1214,27 +1289,29 @@
     <div class="auth-card">
 
 
-      <!-- BRAND -->
+<!-- BRAND -->
 
-      <div class="brand brand-large">
+<div class="brand brand-large">
 
-        <div class="brand-icon">
-          T
-        </div>
+  <div class="brand-icon">
+    T
+  </div>
 
-        <div>
+  <div class="landing-brand-text">
 
-          <strong>
-            Teams Chat
-          </strong>
+    <strong class="landing-teams-chat">
+      Teams Chat
+    </strong>
 
-          <span>
-            Connect Chat
-          </span>
+    <span class="landing-connect-chat">
+      Connect Chat
+    </span>
 
-        </div>
+  </div>
 
-      </div>
+</div>
+
+
 
 
       <!-- AUTH TABS -->
