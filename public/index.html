@@ -1,43 +1,1305 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeamSpace - Connect. Chat. Collaborate.</title>
-  <link rel="stylesheet" href="/style.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#1f5eff"
+  >
+
+  <title>Teams Chat.</title>
+
+  <link
+    rel="icon"
+    type="image/png"
+    href="images/logo.png"
+  >
+
+  <link
+    rel="stylesheet"
+    href="/style.css"
+  >
+
+
+  <!-- =====================================================
+       RESPONSIVE / SCROLLING / PROFILE STYLES
+  ====================================================== -->
+
+  <style>
+
+    html,
+    body {
+
+      width: 100%;
+      min-height: 100%;
+
+      margin: 0;
+
+      overflow: hidden;
+
+    }
+
+
+    *,
+    *::before,
+    *::after {
+
+      box-sizing: border-box;
+
+    }
+
+
+    /* =====================================================
+       APPLICATION LAYOUT
+    ====================================================== */
+
+    .app {
+
+      width: 100%;
+
+      min-height: 100dvh;
+      height: 100dvh;
+
+      overflow: hidden;
+
+    }
+
+
+    .sidebar {
+
+      min-width: 0;
+      min-height: 0;
+
+      height: 100%;
+
+      overflow: hidden;
+
+    }
+
+
+    .chat-area {
+
+      min-width: 0;
+      min-height: 0;
+
+      width: 100%;
+      height: 100%;
+
+      display: flex;
+
+      flex-direction: column;
+
+      overflow: hidden;
+
+    }
+
+
+    .chat-header,
+    .composer {
+
+      flex: 0 0 auto;
+
+    }
+
+
+    /* =====================================================
+       SIDEBAR SCROLLING
+    ====================================================== */
+
+    .contacts-section {
+
+      min-height: 0 !important;
+
+      display: flex !important;
+
+      flex-direction: column !important;
+
+      overflow: hidden !important;
+
+    }
+
+
+    #userList {
+
+      min-height: 0;
+
+      flex: 1 1 auto;
+
+      overflow-y: auto;
+
+      overflow-x: hidden;
+
+      -webkit-overflow-scrolling: touch;
+
+      overscroll-behavior: contain;
+
+      scrollbar-width: thin;
+
+      padding-right: 2px;
+
+    }
+
+
+    /* =====================================================
+       MESSAGE SCROLLING
+    ====================================================== */
+
+    #messages {
+
+      min-height: 0;
+
+      flex: 1 1 auto;
+
+      overflow-y: auto;
+
+      overflow-x: hidden;
+
+      -webkit-overflow-scrolling: touch;
+
+      overscroll-behavior: contain;
+
+      scrollbar-width: thin;
+
+    }
+
+
+    #userList::-webkit-scrollbar,
+    #messages::-webkit-scrollbar {
+
+      width: 7px;
+
+    }
+
+
+    #userList::-webkit-scrollbar-thumb,
+    #messages::-webkit-scrollbar-thumb {
+
+      background: rgba(100,116,139,.45);
+
+      border-radius: 10px;
+
+    }
+
+
+    #userList::-webkit-scrollbar-track,
+    #messages::-webkit-scrollbar-track {
+
+      background: transparent;
+
+    }
+
+
+    /* =====================================================
+       USER LIST
+    ====================================================== */
+
+    .user-item {
+
+      position: relative;
+
+      min-width: 0;
+
+    }
+
+
+    .user-info {
+
+      min-width: 0;
+
+      flex: 1;
+
+    }
+
+
+    .user-info strong,
+    .user-info span,
+    .user-info small {
+
+      display: block;
+
+      max-width: 100%;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+      white-space: nowrap;
+
+    }
+
+
+    /* =====================================================
+       WORKSPACE NAVIGATION
+    ====================================================== */
+
+    .workspace-nav {
+
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 4px;
+
+    }
+
+
+    /* =====================================================
+       CREATE GROUP BUTTON
+    ====================================================== */
+
+    .teamspace-group-button {
+
+      width: 100%;
+
+      margin: 0 0 10px;
+
+      padding: 10px 14px;
+
+      border: 0;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+
+      font-weight: 600;
+
+      background: #1f5eff;
+
+      color: #fff;
+
+      transition:
+        opacity .2s ease,
+        transform .2s ease;
+
+    }
+
+
+    .teamspace-group-button:hover {
+
+      opacity: .92;
+
+    }
+
+
+    .teamspace-group-button:active {
+
+      transform: scale(.98);
+
+    }
+
+
+    /* =====================================================
+       GROUP PROFILE BUTTON
+    ====================================================== */
+
+    .user-profile-button {
+
+      flex-shrink: 0;
+
+      width: 34px;
+      height: 34px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      border: 0;
+
+      border-radius: 50%;
+
+      background: transparent;
+
+      color: inherit;
+
+      cursor: pointer;
+
+      font-size: 18px;
+
+    }
+
+
+    .user-profile-button:hover {
+
+      background: rgba(127,127,127,.15);
+
+    }
+
+
+    /* =====================================================
+       PROFILE MODALS
+    ====================================================== */
+
+    .profile-modal {
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 9999;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 20px;
+
+      background: rgba(0,0,0,.55);
+
+      backdrop-filter: blur(5px);
+
+      -webkit-backdrop-filter: blur(5px);
+
+    }
+
+
+    .profile-modal.hidden {
+
+      display: none;
+
+    }
+
+
+    .profile-modal-card {
+
+      position: relative;
+
+      width: min(430px, 100%);
+
+      max-height: min(700px, 90vh);
+
+      overflow-y: auto;
+
+      padding: 28px;
+
+      border-radius: 18px;
+
+      background: var(--card-bg, #ffffff);
+
+      color: var(--text-color, #111827);
+
+      box-shadow:
+        0 25px 70px rgba(0,0,0,.25);
+
+      scrollbar-width: thin;
+
+    }
+
+
+    .profile-modal-card::-webkit-scrollbar {
+
+      width: 6px;
+
+    }
+
+
+    .profile-modal-card::-webkit-scrollbar-thumb {
+
+      background: rgba(100,116,139,.45);
+
+      border-radius: 10px;
+
+    }
+
+
+    .profile-modal-close {
+
+      position: absolute;
+
+      top: 12px;
+      right: 14px;
+
+      width: 36px;
+      height: 36px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      border: 0;
+
+      border-radius: 50%;
+
+      background: transparent;
+
+      color: inherit;
+
+      font-size: 28px;
+
+      line-height: 1;
+
+      cursor: pointer;
+
+    }
+
+
+    .profile-modal-close:hover {
+
+      background: rgba(127,127,127,.15);
+
+    }
+
+
+    .profile-modal-avatar {
+
+      width: 82px;
+      height: 82px;
+
+      margin: 5px auto 15px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          135deg,
+          #2563eb,
+          #d4a017
+        );
+
+      color: #ffffff;
+
+      font-size: 28px;
+
+      font-weight: 700;
+
+    }
+
+
+    .group-avatar {
+
+      font-size: 32px;
+
+    }
+
+
+    .profile-modal-card h2 {
+
+      margin: 0;
+
+      text-align: center;
+
+      font-size: 22px;
+
+    }
+
+
+    .profile-modal-subtitle {
+
+      margin: 7px 0 20px;
+
+      text-align: center;
+
+      opacity: .7;
+
+    }
+
+
+    /* =====================================================
+       PROFILE FORM
+    ====================================================== */
+
+    .profile-field {
+
+      margin-bottom: 16px;
+
+    }
+
+
+    .profile-field label {
+
+      display: block;
+
+      margin-bottom: 7px;
+
+      font-size: 13px;
+
+      font-weight: 600;
+
+      opacity: .75;
+
+    }
+
+
+    .profile-field input {
+
+      width: 100%;
+
+      box-sizing: border-box;
+
+      padding: 11px 13px;
+
+      border:
+        1px solid
+        rgba(127,127,127,.3);
+
+      border-radius: 9px;
+
+      background: transparent;
+
+      color: inherit;
+
+      outline: none;
+
+    }
+
+
+    .profile-field input:focus {
+
+      border-color: #2563eb;
+
+    }
+
+
+    .profile-save-btn {
+
+      width: 100%;
+
+      padding: 11px 15px;
+
+      border: 0;
+
+      border-radius: 9px;
+
+      background: #2563eb;
+
+      color: #ffffff;
+
+      font-weight: 600;
+
+      cursor: pointer;
+
+    }
+
+
+    .profile-save-btn:hover {
+
+      opacity: .9;
+
+    }
+
+
+    .profile-save-btn:disabled {
+
+      opacity: .6;
+
+      cursor: not-allowed;
+
+    }
+
+
+    .profile-message {
+
+      margin-top: 10px;
+
+      text-align: center;
+
+      font-size: 13px;
+
+    }
+
+
+    /* =====================================================
+       GROUP ADMIN CONTROLS
+    ====================================================== */
+
+    .group-admin-controls {
+
+      margin-bottom: 12px;
+
+      padding: 14px;
+
+      border-radius: 12px;
+
+      background: rgba(37,99,235,.08);
+
+    }
+
+
+    .group-admin-controls label {
+
+      display: block;
+
+      margin-bottom: 7px;
+
+      font-size: 12px;
+
+      font-weight: 600;
+
+    }
+
+
+    .group-admin-controls input {
+
+      width: 100%;
+
+      box-sizing: border-box;
+
+      padding: 10px;
+
+      border:
+        1px solid
+        rgba(127,127,127,.3);
+
+      border-radius: 8px;
+
+      background: transparent;
+
+      color: inherit;
+
+      outline: none;
+
+    }
+
+
+    .group-admin-controls input:focus {
+
+      border-color: #2563eb;
+
+    }
+
+
+    .group-admin-save {
+
+      width: 100%;
+
+      margin-top: 8px;
+
+      padding: 9px;
+
+      border: 0;
+
+      border-radius: 8px;
+
+      background: #2563eb;
+
+      color: #ffffff;
+
+      cursor: pointer;
+
+      font-weight: 600;
+
+    }
+
+
+    .group-admin-save:hover {
+
+      opacity: .9;
+
+    }
+
+
+    .group-admin-save:disabled {
+
+      opacity: .6;
+
+      cursor: not-allowed;
+
+    }
+
+
+    /* =====================================================
+       GROUP MEMBERS
+    ====================================================== */
+
+    .group-members-heading {
+
+      margin: 20px 0 10px;
+
+      font-size: 14px;
+
+      font-weight: 700;
+
+    }
+
+
+    .group-members-list {
+
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 7px;
+
+      max-height: 300px;
+
+      overflow-y: auto;
+
+      scrollbar-width: thin;
+
+    }
+
+
+    .group-members-list::-webkit-scrollbar {
+
+      width: 6px;
+
+    }
+
+
+    .group-members-list::-webkit-scrollbar-thumb {
+
+      background:
+        rgba(100,116,139,.45);
+
+      border-radius: 10px;
+
+    }
+
+
+    .group-member {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 10px;
+
+      padding: 10px;
+
+      border-radius: 10px;
+
+      background:
+        rgba(127,127,127,.08);
+
+      min-width: 0;
+
+    }
+
+
+    .group-member-avatar {
+
+      width: 38px;
+      height: 38px;
+
+      flex-shrink: 0;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      border-radius: 50%;
+
+      background: #2563eb;
+
+      color: #ffffff;
+
+      font-size: 13px;
+
+      font-weight: 700;
+
+    }
+
+
+    .group-member-info {
+
+      min-width: 0;
+
+      flex: 1;
+
+    }
+
+
+    .group-member-name {
+
+      font-weight: 600;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+      white-space: nowrap;
+
+    }
+
+
+    .group-member-email {
+
+      margin-top: 2px;
+
+      font-size: 12px;
+
+      opacity: .65;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+      white-space: nowrap;
+
+    }
+
+
+    .group-admin-badge {
+
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      flex-shrink: 0;
+
+      padding: 4px 8px;
+
+      border-radius: 999px;
+
+      background:
+        rgba(212,160,23,.18);
+
+      color: #a87900;
+
+      font-size: 11px;
+
+      font-weight: 700;
+
+    }
+
+
+    .group-member-remove {
+
+      flex-shrink: 0;
+
+      border: 0;
+
+      padding: 7px 9px;
+
+      border-radius: 7px;
+
+      background:
+        rgba(220,38,38,.1);
+
+      color: #dc2626;
+
+      cursor: pointer;
+
+      font-size: 12px;
+
+    }
+
+
+    .group-member-remove:hover {
+
+      background:
+        rgba(220,38,38,.18);
+
+    }
+
+
+    .group-member-remove:disabled {
+
+      opacity: .5;
+
+      cursor: not-allowed;
+
+    }
+
+
+    /* =====================================================
+       LEAVE GROUP
+    ====================================================== */
+
+    .group-profile-actions {
+
+      margin-top: 20px;
+
+    }
+
+
+    .danger-profile-btn {
+
+      width: 100%;
+
+      padding: 11px;
+
+      border: 0;
+
+      border-radius: 9px;
+
+      background: #dc2626;
+
+      color: #ffffff;
+
+      cursor: pointer;
+
+      font-weight: 600;
+
+    }
+
+
+    .danger-profile-btn:hover {
+
+      opacity: .9;
+
+    }
+
+
+    /* =====================================================
+       PROFILE CLICK AREAS
+    ====================================================== */
+
+    .profile {
+
+      cursor: pointer;
+
+    }
+
+
+    .chat-header-info {
+
+      cursor: pointer;
+
+    }
+
+
+    /* =====================================================
+       TABLETS
+    ====================================================== */
+
+    @media (max-width: 900px) {
+
+      .sidebar {
+
+        width:
+          min(330px, 38vw);
+
+      }
+
+    }
+
+
+    /* =====================================================
+       PHONES
+    ====================================================== */
+
+    @media (max-width: 760px) {
+
+      .app {
+
+        flex-direction: column !important;
+
+      }
+
+
+      .sidebar {
+
+        width: 100% !important;
+
+        height: 44dvh !important;
+
+        min-height: 280px;
+
+        max-height: 44dvh;
+
+        border-right: none !important;
+
+        border-bottom:
+          1px solid
+          rgba(148,163,184,.25);
+
+      }
+
+
+      .chat-area {
+
+        width: 100%;
+
+        height: 56dvh !important;
+
+        min-height: 0;
+
+      }
+
+
+      .chat-header {
+
+        padding: 10px 12px !important;
+
+      }
+
+
+      .chat-header h2 {
+
+        font-size: 16px !important;
+
+      }
+
+
+      .chat-header p {
+
+        font-size: 12px !important;
+
+      }
+
+
+      .messages {
+
+        padding: 10px !important;
+
+      }
+
+
+      .composer {
+
+        padding: 8px !important;
+
+      }
+
+
+      #messageInput {
+
+        min-width: 0;
+
+        font-size: 16px !important;
+
+      }
+
+
+      .profile-modal {
+
+        padding: 12px;
+
+      }
+
+
+      .profile-modal-card {
+
+        max-height: 92vh;
+
+        padding: 24px 18px;
+
+      }
+
+    }
+
+
+    /* =====================================================
+       SMALL PHONES
+    ====================================================== */
+
+    @media (max-width: 480px) {
+
+      .sidebar {
+
+        height: 47dvh !important;
+
+        max-height: 47dvh;
+
+        min-height: 260px;
+
+      }
+
+
+      .chat-area {
+
+        height: 53dvh !important;
+
+      }
+
+
+      .user-item {
+
+        padding: 8px !important;
+
+      }
+
+
+      .message {
+
+        max-width: 86% !important;
+
+      }
+
+
+      .profile-modal-avatar {
+
+        width: 72px;
+
+        height: 72px;
+
+      }
+
+
+      .group-members-list {
+
+        max-height: 260px;
+
+      }
+
+
+      .group-member {
+
+        padding: 8px;
+
+      }
+
+
+      .group-member-remove {
+
+        padding: 6px 7px;
+
+        font-size: 11px;
+
+      }
+
+    }
+
+
+    /* =====================================================
+       VERY SMALL SCREENS
+    ====================================================== */
+
+    @media (max-width: 360px) {
+
+      .sidebar {
+
+        min-height: 245px;
+
+      }
+
+
+      .profile-modal-card {
+
+        padding:
+          20px 14px;
+
+      }
+
+
+      .group-admin-controls {
+
+        padding: 11px;
+
+      }
+
+    }
+
+  </style>
+
 </head>
+
+
 <body>
 
-  <section id="authScreen" class="auth-screen">
+
+  <!-- =====================================================
+       AUTHENTICATION SCREEN
+  ====================================================== -->
+
+  <section
+    id="authScreen"
+    class="auth-screen"
+  >
+
     <div class="auth-card">
 
+
+      <!-- BRAND -->
+
       <div class="brand brand-large">
-        <div class="brand-icon">T</div>
-        <div>
-          <strong>TeamSpace</strong>
-          <span>Connect. Chat. Collaborate.</span>
+
+        <div class="brand-icon">
+          T
         </div>
+
+        <div>
+
+          <strong>
+            Teams Chat
+          </strong>
+
+          <span>
+            Connect Chat
+          </span>
+
+        </div>
+
       </div>
+
+
+      <!-- AUTH TABS -->
 
       <div class="auth-tabs">
-        <button class="tab active" data-mode="login">Sign in</button>
-        <button class="tab" data-mode="register">Create account</button>
+
+        <button
+          class="tab active"
+          data-mode="login"
+          type="button"
+        >
+          Sign in
+        </button>
+
+
+        <button
+          class="tab"
+          data-mode="register"
+          type="button"
+        >
+          Create account
+        </button>
+
       </div>
 
-      <form id="authForm" novalidate>
 
-        <div id="nameGroup" class="form-group hidden">
-          <label for="name">Full name</label>
+      <!-- AUTH FORM -->
+
+      <form
+        id="authForm"
+        novalidate
+      >
+
+
+        <!-- NAME -->
+
+        <div
+          id="nameGroup"
+          class="form-group hidden"
+        >
+
+          <label for="name">
+            Full name
+          </label>
+
+
           <input
             id="name"
             type="text"
             placeholder="e.g. Username"
             autocomplete="name"
           >
+
         </div>
 
+
+        <!-- EMAIL -->
+
         <div class="form-group">
-          <label for="email">Email</label>
+
+          <label for="email">
+            Email
+          </label>
+
+
           <input
             id="email"
             type="email"
@@ -45,10 +1307,19 @@
             autocomplete="email"
             required
           >
+
         </div>
 
+
+        <!-- PASSWORD -->
+
         <div class="form-group">
-          <label for="password">Password</label>
+
+          <label for="password">
+            Password
+          </label>
+
+
           <input
             id="password"
             type="password"
@@ -56,90 +1327,387 @@
             autocomplete="current-password"
             required
           >
+
         </div>
 
-        <button id="authButton" class="primary-btn" type="submit">
+
+        <!-- AUTH BUTTON -->
+
+        <button
+          id="authButton"
+          class="primary-btn"
+          type="submit"
+        >
           Sign in
         </button>
 
-        <p id="authError" class="error"></p>
+
+        <!-- AUTH ERROR -->
+
+        <p
+          id="authError"
+          class="error"
+        ></p>
+
       </form>
+
     </div>
+
   </section>
 
-  <div id="appScreen" class="app hidden">
+
+  <!-- =====================================================
+       MAIN APPLICATION
+  ====================================================== -->
+
+  <div
+    id="appScreen"
+    class="app hidden"
+  >
+
+
+    <!-- =================================================
+         SIDEBAR
+    ================================================== -->
 
     <aside class="sidebar">
 
+
+      <!-- SIDEBAR TOP -->
+
       <div class="sidebar-top">
+
         <div class="brand">
-          <div class="brand-icon">T</div>
-          <div>
-            <strong>TeamSpace</strong>
-            <span>Messaging</span>
+
+          <div class="brand-icon">
+            T
           </div>
+
+
+          <div>
+
+            <strong>
+              Teams Chat
+            </strong>
+
+
+            <span>
+              Messaging
+            </span>
+
+          </div>
+
         </div>
+
+
+        <!-- DARK MODE -->
+
+        <button
+          id="themeToggle"
+          class="theme-toggle"
+          type="button"
+          title="Toggle dark mode"
+          aria-label="Toggle dark mode"
+        >
+          🌙
+        </button>
+
       </div>
+
+
+      <!-- =================================================
+           WORKSPACE NAVIGATION
+      ================================================== -->
 
       <div class="sidebar-section">
-        <div class="section-title">Workspace</div>
-
-        <button class="nav-item active" type="button">
-          <span>💬</span> Chat
-        </button>
-
-        <button class="nav-item" type="button">
-          <span>👥</span> People
-        </button>
-      </div>
-
-      <div class="sidebar-section contacts-section">
 
         <div class="section-title">
-          <span>Contacts</span>
-          <button id="refreshUsers" type="button" title="Refresh contacts">↻</button>
+          Workspace
         </div>
 
-        <div id="userList"></div>
+
+        <div class="workspace-nav">
+
+
+          <!-- CHAT -->
+
+          <button
+            id="chatNav"
+            class="nav-item active"
+            type="button"
+          >
+
+            <span>
+              💬
+            </span>
+
+            Chat
+
+          </button>
+
+
+          <!-- PEOPLE -->
+
+          <button
+            id="peopleNav"
+            class="nav-item"
+            type="button"
+          >
+
+            <span>
+              👥
+            </span>
+
+            People
+
+          </button>
+
+
+          <!-- GROUPS -->
+
+          <button
+            id="groupsNav"
+            class="nav-item"
+            type="button"
+          >
+
+            <span>
+              👥
+            </span>
+
+            Groups
+
+          </button>
+
+        </div>
+
       </div>
 
-      <div class="profile">
-        <div id="myAvatar" class="avatar"></div>
 
-        <div class="profile-info">
-          <strong id="myName"></strong>
-          <span id="myEmail"></span>
+      <!-- =================================================
+           CHAT / PEOPLE / GROUPS LIST
+      ================================================== -->
+
+      <div
+        class="sidebar-section contacts-section"
+      >
+
+
+        <!-- LIST HEADER -->
+
+        <div class="section-title">
+
+          <span id="listTitle">
+            Chats
+          </span>
+
+
+          <button
+            id="refreshUsers"
+            type="button"
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            ↻
+          </button>
+
         </div>
 
-        <button id="logoutBtn" type="button" title="Sign out">↪</button>
+
+        <!--
+          The JavaScript reuses this container
+          for Chat, People and Groups.
+        -->
+
+        <div id="userList"></div>
+
+      </div>
+
+
+      <!-- =================================================
+           CURRENT USER PROFILE
+      ================================================== -->
+
+      <div
+        class="profile"
+        title="Open your profile"
+      >
+
+
+        <!-- AVATAR -->
+
+        <div
+          id="myAvatar"
+          class="avatar"
+        ></div>
+
+
+        <!-- USER DETAILS -->
+
+        <div class="profile-info">
+
+          <strong
+            id="myName"
+          ></strong>
+
+
+          <span
+            id="myEmail"
+          ></span>
+
+        </div>
+
+
+        <!-- ACCOUNT ACTIONS -->
+
+        <div class="account-actions">
+
+
+          <!-- LOGOUT -->
+
+          <button
+            id="logoutBtn"
+            class="account-btn logout-btn"
+            type="button"
+            title="Log out"
+            aria-label="Log out"
+          >
+            ↪
+          </button>
+
+
+          <!-- DELETE ACCOUNT -->
+
+          <button
+            id="deleteAccountBtn"
+            class="account-btn delete-account-btn"
+            type="button"
+            title="Delete account"
+            aria-label="Delete account"
+          >
+            🗑
+          </button>
+
+        </div>
+
       </div>
 
     </aside>
 
+
+    <!-- =================================================
+         CHAT AREA
+    ================================================== -->
+
     <main class="chat-area">
 
-      <header class="chat-header">
-        <div id="chatUserAvatar" class="avatar"></div>
 
-        <div>
-          <h2 id="chatUserName">Select a contact</h2>
+      <!-- =================================================
+           CHAT HEADER
+      ================================================== -->
+
+      <header class="chat-header">
+
+
+        <!-- CURRENT CHAT AVATAR -->
+
+        <div
+          id="chatUserAvatar"
+          class="avatar"
+        ></div>
+
+
+        <!--
+          Clicking this area opens the selected
+          person's profile or group profile.
+        -->
+
+        <div
+          id="chatHeaderInfo"
+          class="chat-header-info"
+          title="Open profile"
+        >
+
+          <h2 id="chatUserName">
+            Select a contact
+          </h2>
+
+
           <p id="chatStatus">
-            Choose someone from your contacts to start chatting.
+            Choose someone from People to start chatting.
           </p>
+
         </div>
+
       </header>
 
-      <section id="messages" class="messages">
+
+      <!-- =================================================
+           MESSAGES
+      ================================================== -->
+
+      <section
+        id="messages"
+        class="messages"
+      >
 
         <div class="empty-chat">
-          <div class="empty-icon">💬</div>
-          <h2>Your conversations</h2>
-          <p>Select a registered user from the left to start a private chat.</p>
+
+
+          <div class="empty-icon">
+            💬
+          </div>
+
+
+          <h2>
+            Your conversations
+          </h2>
+
+
+          <p>
+            Select a person from People to start a private chat,
+            or open Chat to continue an existing conversation.
+          </p>
+
         </div>
 
       </section>
 
-      <form id="messageForm" class="composer hidden">
+
+      <!-- =================================================
+           MESSAGE COMPOSER
+      ================================================== -->
+
+      <form
+        id="messageForm"
+        class="composer hidden"
+      >
+
+
+        <!-- PHOTO BUTTON -->
+
+        <button
+          id="imageButton"
+          class="image-button"
+          type="button"
+          title="Share a photo"
+          aria-label="Share a photo"
+        >
+          📷
+        </button>
+
+
+        <!-- PHOTO INPUT -->
+
+        <input
+          id="imageInput"
+          type="file"
+          accept="image/*"
+          hidden
+        >
+
+
+        <!-- MESSAGE INPUT -->
 
         <input
           id="messageInput"
@@ -149,16 +1717,230 @@
           placeholder="Type a message..."
         >
 
-        <button type="submit" title="Send message">➤</button>
+
+        <!-- SEND BUTTON -->
+
+        <button
+          id="sendMessageBtn"
+          type="submit"
+          title="Send message"
+          aria-label="Send message"
+        >
+          ➤
+        </button>
 
       </form>
 
+
+      <!-- =================================================
+           PHOTO UPLOAD STATUS
+      ================================================== -->
+
+      <div
+        id="uploadStatus"
+        class="upload-status"
+        aria-live="polite"
+      ></div>
+
     </main>
+
   </div>
 
-<script src="https://teams-88mx.onrender.com/socket.io/socket.io.js"></script>
-<script src="/app.js"></script>
+
+  <!-- =====================================================
+       USER PROFILE MODAL
+  ====================================================== -->
+
+  <div
+    id="profileModal"
+    class="profile-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="profileModalTitle"
+  >
+
+    <div class="profile-modal-card">
+
+
+      <!-- CLOSE -->
+
+      <button
+        id="closeProfileModal"
+        class="profile-modal-close"
+        type="button"
+        aria-label="Close profile"
+      >
+        ×
+      </button>
+
+
+      <!-- AVATAR -->
+
+      <div
+        id="profileModalAvatar"
+        class="profile-modal-avatar"
+      ></div>
+
+
+      <!-- NAME -->
+
+      <h2
+        id="profileModalTitle"
+      >
+        Profile
+      </h2>
+
+
+      <!-- EMAIL / DESCRIPTION -->
+
+      <p
+        id="profileModalSubtitle"
+        class="profile-modal-subtitle"
+      ></p>
+
+
+      <!-- PROFILE CONTENT -->
+
+      <div
+        id="profileModalContent"
+      ></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       GROUP PROFILE MODAL
+  ====================================================== -->
+
+  <div
+    id="groupProfileModal"
+    class="profile-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="groupProfileName"
+  >
+
+    <div
+      class="profile-modal-card group-profile-card"
+    >
+
+
+      <!-- CLOSE -->
+
+      <button
+        id="closeGroupProfileModal"
+        class="profile-modal-close"
+        type="button"
+        aria-label="Close group profile"
+      >
+        ×
+      </button>
+
+
+      <!-- GROUP AVATAR -->
+
+      <div
+        id="groupProfileAvatar"
+        class="profile-modal-avatar group-avatar"
+      >
+        👥
+      </div>
+
+
+      <!-- GROUP NAME -->
+
+      <h2
+        id="groupProfileName"
+      >
+        Group
+      </h2>
+
+
+      <!-- GROUP MEMBER COUNT -->
+
+      <p
+        id="groupProfileSubtitle"
+        class="profile-modal-subtitle"
+      ></p>
+
+
+      <!--
+        ADMIN CONTROLS
+
+        JavaScript adds the group name editor
+        here when the current user is Admin.
+      -->
+
+      <div
+        id="groupAdminControls"
+      ></div>
+
+
+      <!-- MEMBERS TITLE -->
+
+      <div class="group-members-heading">
+        Members
+      </div>
+
+
+      <!-- MEMBERS -->
+
+      <div
+        id="groupMembersList"
+        class="group-members-list"
+      ></div>
+
+
+      <!-- GROUP ACTIONS -->
+
+      <div class="group-profile-actions">
+
+
+        <!-- LEAVE GROUP -->
+
+        <button
+          id="leaveGroupBtn"
+          class="danger-profile-btn"
+          type="button"
+        >
+          Leave Group
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       FIREBASE SDK
+  ====================================================== -->
+
+  <script
+    src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"
+  ></script>
+
+
+  <script
+    src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"
+  ></script>
+
+
+  <script
+    src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"
+  ></script>
+
+
+  <!-- =====================================================
+       TEAMSPACE APPLICATION
+  ====================================================== -->
+
+  <script src="/app.js"></script>
+
+
 </body>
-</html>
-</body>
+
 </html>
