@@ -11,6 +11,11 @@
   - Chat workspace shows only existing conversations
   - People workspace shows all registered users
   - Groups workspace shows only user's groups
+  - User profile viewing
+  - User profile editing
+  - Profile photo support
+  - Group details
+  - Group member list
   - Online/offline presence
   - Last seen
   - Dark mode
@@ -21,6 +26,12 @@
   - Independently scrollable messages
   - Log out
   - Delete account
+
+  GROUP UX
+  - Clicking a group in Groups opens the conversation
+  - Group details are NOT opened from the Groups list
+  - Clicking the group name/header while inside the group
+    conversation opens Group Details
   ============================================================
 */
 
@@ -43,12 +54,6 @@ const firebaseConfig = {
 };
 
 
-/*
-  ============================================================
-  INITIALIZE FIREBASE
-  ============================================================
-*/
-
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -63,69 +68,40 @@ const db = firebase.database();
   ============================================================
 */
 
-const authScreen =
-  document.getElementById("authScreen");
+const authScreen = document.getElementById("authScreen");
+const appScreen = document.getElementById("appScreen");
+const authForm = document.getElementById("authForm");
+const authError = document.getElementById("authError");
+const authButton = document.getElementById("authButton");
+const nameGroup = document.getElementById("nameGroup");
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
 
-const appScreen =
-  document.getElementById("appScreen");
+const userList = document.getElementById("userList");
+const messagesBox = document.getElementById("messages");
+const messageForm = document.getElementById("messageForm");
+const messageInput = document.getElementById("messageInput");
 
-const authForm =
-  document.getElementById("authForm");
+const chatUserName = document.getElementById("chatUserName");
+const chatStatus = document.getElementById("chatStatus");
+const chatUserAvatar = document.getElementById("chatUserAvatar");
 
-const authError =
-  document.getElementById("authError");
+/*
+  Group header information area.
+  This is the clickable area when a group conversation
+  is currently open.
+*/
+const chatHeaderInfo =
+  document.getElementById("chatHeaderInfo") ||
+  document.querySelector(".chat-header-info");
 
-const authButton =
-  document.getElementById("authButton");
+const themeToggle = document.getElementById("themeToggle");
+const imageButton = document.getElementById("imageButton");
+const imageInput = document.getElementById("imageInput");
+const uploadStatus = document.getElementById("uploadStatus");
 
-const nameGroup =
-  document.getElementById("nameGroup");
-
-const nameInput =
-  document.getElementById("name");
-
-const emailInput =
-  document.getElementById("email");
-
-const passwordInput =
-  document.getElementById("password");
-
-const userList =
-  document.getElementById("userList");
-
-const messagesBox =
-  document.getElementById("messages");
-
-const messageForm =
-  document.getElementById("messageForm");
-
-const messageInput =
-  document.getElementById("messageInput");
-
-const chatUserName =
-  document.getElementById("chatUserName");
-
-const chatStatus =
-  document.getElementById("chatStatus");
-
-const chatUserAvatar =
-  document.getElementById("chatUserAvatar");
-
-const themeToggle =
-  document.getElementById("themeToggle");
-
-const imageButton =
-  document.getElementById("imageButton");
-
-const imageInput =
-  document.getElementById("imageInput");
-
-const uploadStatus =
-  document.getElementById("uploadStatus");
-
-const logoutBtn =
-  document.getElementById("logoutBtn");
-
+const logoutBtn = document.getElementById("logoutBtn");
 const deleteAccountBtn =
   document.getElementById("deleteAccountBtn");
 
@@ -189,8 +165,7 @@ const activeListeners = [];
 function initials(name) {
 
   const value =
-    String(name || "")
-      .trim();
+    String(name || "").trim();
 
   if (!value) {
     return "?";
@@ -227,14 +202,9 @@ function formatTime(value) {
     return "";
   }
 
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return "";
   }
 
@@ -249,61 +219,66 @@ function formatTime(value) {
 }
 
 
+function formatDate(value) {
+
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString(
+    [],
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    }
+  );
+
+}
+
+
 function formatLastSeen(timestamp) {
 
   if (!timestamp) {
     return "Last seen unavailable";
   }
 
-  const date =
-    new Date(timestamp);
+  const date = new Date(timestamp);
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return "Last seen unavailable";
   }
 
   const difference =
     Math.max(
       0,
-      Date.now() -
-      date.getTime()
+      Date.now() - date.getTime()
     );
 
-  const minute =
-    60 * 1000;
-
-  const hour =
-    60 * minute;
-
-  const day =
-    24 * hour;
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
 
   if (difference < minute) {
-
     return "Last seen just now";
-
   }
 
   if (difference < hour) {
 
     const minutes =
-      Math.floor(
-        difference / minute
-      );
+      Math.floor(difference / minute);
 
     return (
       "Last seen " +
       minutes +
       " minute" +
-      (
-        minutes === 1
-          ? ""
-          : "s"
-      ) +
+      (minutes === 1 ? "" : "s") +
       " ago"
     );
 
@@ -312,19 +287,13 @@ function formatLastSeen(timestamp) {
   if (difference < day) {
 
     const hours =
-      Math.floor(
-        difference / hour
-      );
+      Math.floor(difference / hour);
 
     return (
       "Last seen " +
       hours +
       " hour" +
-      (
-        hours === 1
-          ? ""
-          : "s"
-      ) +
+      (hours === 1 ? "" : "s") +
       " ago"
     );
 
@@ -356,8 +325,7 @@ function formatLastSeen(timestamp) {
 function setError(message) {
 
   if (authError) {
-    authError.textContent =
-      message || "";
+    authError.textContent = message || "";
   }
 
 }
@@ -457,6 +425,125 @@ function makeChatId(uid1, uid2) {
 
 /*
   ============================================================
+  GROUP HEADER INTERACTION
+  ============================================================
+*/
+
+function setGroupHeaderClickable(enabled) {
+
+  if (!chatHeaderInfo) {
+    return;
+  }
+
+  chatHeaderInfo.classList.toggle(
+    "group-header-clickable",
+    enabled
+  );
+
+  chatHeaderInfo.setAttribute(
+    "role",
+    enabled ? "button" : "presentation"
+  );
+
+  chatHeaderInfo.setAttribute(
+    "tabindex",
+    enabled ? "0" : "-1"
+  );
+
+  chatHeaderInfo.setAttribute(
+    "aria-label",
+    enabled
+      ? "Open group details"
+      : ""
+  );
+
+}
+
+
+function openSelectedGroupDetails() {
+
+  if (
+    !selectedGroup ||
+    !currentUser
+  ) {
+
+    return;
+
+  }
+
+  openGroupDetails(
+    selectedGroup
+  );
+
+}
+
+
+if (chatHeaderInfo) {
+
+  chatHeaderInfo.addEventListener(
+    "click",
+    event => {
+
+      /*
+        Only groups can open details from
+        the chat header.
+
+        Private chat headers do nothing.
+      */
+
+      if (!selectedGroup) {
+        return;
+      }
+
+      /*
+        Ignore clicks that originate from
+        interactive controls if any are
+        later added to the header.
+      */
+
+      if (
+        event.target.closest(
+          "button, a, input"
+        )
+      ) {
+
+        return;
+
+      }
+
+      openSelectedGroupDetails();
+
+    }
+  );
+
+
+  chatHeaderInfo.addEventListener(
+    "keydown",
+    event => {
+
+      if (!selectedGroup) {
+        return;
+      }
+
+      if (
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+
+        event.preventDefault();
+
+        openSelectedGroupDetails();
+
+      }
+
+    }
+  );
+
+}
+
+
+/*
+  ============================================================
   ENSURE WORKSPACE NAVIGATION
   ============================================================
 */
@@ -472,36 +559,17 @@ function ensureWorkspaceNavigation() {
     return;
   }
 
-  /*
-    If the new IDs already exist,
-    use them directly.
-  */
-
   chatNav =
-    document.getElementById(
-      "chatNav"
-    );
+    document.getElementById("chatNav");
 
   peopleNav =
-    document.getElementById(
-      "peopleNav"
-    );
+    document.getElementById("peopleNav");
 
   groupsNav =
-    document.getElementById(
-      "groupsNav"
-    );
+    document.getElementById("groupsNav");
 
   listTitle =
-    document.getElementById(
-      "listTitle"
-    );
-
-  /*
-    Support an older index.html by
-    assigning IDs to the first two
-    navigation buttons.
-  */
+    document.getElementById("listTitle");
 
   const workspaceSection =
     sidebarSections[0];
@@ -511,10 +579,7 @@ function ensureWorkspaceNavigation() {
       ".nav-item"
     );
 
-  if (
-    !chatNav &&
-    oldNavButtons[0]
-  ) {
+  if (!chatNav && oldNavButtons[0]) {
 
     oldNavButtons[0].id =
       "chatNav";
@@ -524,10 +589,7 @@ function ensureWorkspaceNavigation() {
 
   }
 
-  if (
-    !peopleNav &&
-    oldNavButtons[1]
-  ) {
+  if (!peopleNav && oldNavButtons[1]) {
 
     oldNavButtons[1].id =
       "peopleNav";
@@ -536,11 +598,6 @@ function ensureWorkspaceNavigation() {
       oldNavButtons[1];
 
   }
-
-  /*
-    Create Groups navigation if it
-    doesn't exist.
-  */
 
   if (!groupsNav) {
 
@@ -565,12 +622,6 @@ function ensureWorkspaceNavigation() {
 
   }
 
-  /*
-    Make sure Chat and People have
-    readable labels when old HTML
-    is being used.
-  */
-
   if (chatNav) {
 
     chatNav.innerHTML =
@@ -591,10 +642,6 @@ function ensureWorkspaceNavigation() {
 
   }
 
-  /*
-    Find or create list title.
-  */
-
   if (!listTitle) {
 
     const contactsSection =
@@ -610,9 +657,7 @@ function ensureWorkspaceNavigation() {
     if (sectionTitle) {
 
       const existingSpan =
-        sectionTitle.querySelector(
-          "span"
-        );
+        sectionTitle.querySelector("span");
 
       if (existingSpan) {
 
@@ -625,9 +670,7 @@ function ensureWorkspaceNavigation() {
       } else {
 
         const span =
-          document.createElement(
-            "span"
-          );
+          document.createElement("span");
 
         span.id =
           "listTitle";
@@ -635,9 +678,7 @@ function ensureWorkspaceNavigation() {
         span.textContent =
           "Chats";
 
-        sectionTitle.prepend(
-          span
-        );
+        sectionTitle.prepend(span);
 
         listTitle =
           span;
@@ -656,7 +697,7 @@ ensureWorkspaceNavigation();
 
 /*
   ============================================================
-  RESPONSIVE / SCROLLING / DARK MODE STYLES
+  DYNAMIC STYLES
   ============================================================
 */
 
@@ -714,6 +755,7 @@ function installDynamicStyles() {
       display: flex !important;
       flex-direction: column !important;
       overflow: hidden !important;
+      position: relative;
     }
 
     .sidebar-section {
@@ -769,6 +811,7 @@ function installDynamicStyles() {
     .chat-header-info {
       min-width: 0;
       overflow: hidden;
+      transition: opacity .15s ease;
     }
 
     .chat-header-info h2,
@@ -776,6 +819,26 @@ function installDynamicStyles() {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    /*
+      Group header is clickable ONLY while
+      a group conversation is open.
+    */
+
+    #chatHeaderInfo.group-header-clickable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #chatHeaderInfo.group-header-clickable:hover {
+      opacity: .82;
+    }
+
+    #chatHeaderInfo.group-header-clickable:focus-visible {
+      outline: 2px solid #1f5eff;
+      outline-offset: 4px;
+      border-radius: 6px;
     }
 
     .user-item {
@@ -794,6 +857,20 @@ function installDynamicStyles() {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .profile-clickable {
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+    }
+
+    .profile-clickable:hover {
+      transform: scale(1.02);
+    }
+
+    .profile-clickable {
+      transition: transform .15s ease;
     }
 
     .message-row {
@@ -956,6 +1033,235 @@ function installDynamicStyles() {
       overflow-wrap: anywhere;
     }
 
+    .teamspace-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: rgba(0,0,0,.58);
+    }
+
+    .teamspace-modal {
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 16px;
+      padding: 24px;
+      box-sizing: border-box;
+      background: #fff;
+      color: #222;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+
+    .teamspace-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .teamspace-modal-avatar {
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #1f5eff;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .teamspace-modal-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .teamspace-modal h2,
+    .teamspace-modal h3 {
+      margin-top: 0;
+    }
+
+    .teamspace-modal-close {
+      margin-left: auto;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0,0,0,.07);
+      cursor: pointer;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .teamspace-modal-close:hover {
+      background: rgba(0,0,0,.13);
+    }
+
+    .teamspace-detail-row {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(128,128,128,.2);
+    }
+
+    .teamspace-detail-label {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: .65;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .teamspace-detail-value {
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+
+    .teamspace-member {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 5px;
+    }
+
+    .teamspace-member:hover {
+      background: rgba(128,128,128,.08);
+    }
+
+    .teamspace-small-avatar {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1f5eff;
+      color: #fff;
+      font-weight: 700;
+      overflow: hidden;
+    }
+
+    .teamspace-small-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .teamspace-member-info {
+      min-width: 0;
+    }
+
+    .teamspace-member-info strong,
+    .teamspace-member-info span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .teamspace-modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .teamspace-modal-btn {
+      border: none;
+      border-radius: 9px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .teamspace-primary-btn {
+      background: #1f5eff;
+      color: #fff;
+    }
+
+    .teamspace-secondary-btn {
+      background: rgba(128,128,128,.12);
+      color: inherit;
+    }
+
+    .teamspace-danger-btn {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .teamspace-form-group {
+      margin-bottom: 16px;
+    }
+
+    .teamspace-form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .teamspace-form-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 11px 12px;
+      border: 1px solid #ccc;
+      border-radius: 9px;
+      font: inherit;
+    }
+
+    .teamspace-profile-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .teamspace-profile-preview-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1f5eff;
+      color: white;
+      font-size: 30px;
+      font-weight: 700;
+    }
+
+    .teamspace-profile-preview-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .teamspace-photo-label {
+      display: inline-block;
+      padding: 8px 13px;
+      border-radius: 8px;
+      background: rgba(31,94,255,.1);
+      color: #1f5eff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .teamspace-photo-label input {
+      display: none;
+    }
+
     body.dark-mode {
       background: #0f172a !important;
       color: #e5e7eb !important;
@@ -1087,6 +1393,31 @@ function installDynamicStyles() {
       background: rgba(248,113,113,.15);
     }
 
+    body.dark-mode .teamspace-modal {
+      background: #1f2937;
+      color: #f9fafb;
+    }
+
+    body.dark-mode .teamspace-modal-close,
+    body.dark-mode .teamspace-secondary-btn {
+      background: #374151;
+      color: #fff;
+    }
+
+    body.dark-mode .teamspace-detail-row {
+      border-color: #374151;
+    }
+
+    body.dark-mode .teamspace-form-input {
+      background: #111827;
+      color: #fff;
+      border-color: #4b5563;
+    }
+
+    body.dark-mode .teamspace-member:hover {
+      background: #374151;
+    }
+
     @media (max-width: 760px) {
 
       body {
@@ -1115,34 +1446,12 @@ function installDynamicStyles() {
         min-height: 0 !important;
       }
 
-      .sidebar-top {
-        flex-shrink: 0;
-      }
-
-      .contacts-section {
-        min-height: 0 !important;
-      }
-
-      #userList {
-        max-height: none;
-      }
-
       .message {
         max-width: 88%;
       }
 
       .chat-image {
         max-width: min(260px, 75vw);
-      }
-
-      .chat-header {
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-
-      .composer {
-        padding-left: 8px;
-        padding-right: 8px;
       }
 
     }
@@ -1158,13 +1467,6 @@ function installDynamicStyles() {
         flex-basis: 60%;
       }
 
-      .theme-toggle {
-        width: 34px;
-        height: 34px;
-        right: 8px;
-        top: 8px;
-      }
-
       .message {
         max-width: 92%;
       }
@@ -1173,14 +1475,13 @@ function installDynamicStyles() {
         max-width: 70vw;
       }
 
-      .account-btn {
-        width: 32px;
-        height: 32px;
+      .teamspace-modal-overlay {
+        padding: 10px;
       }
 
-      .image-button {
-        width: 40px;
-        height: 40px;
+      .teamspace-modal {
+        padding: 18px;
+        max-height: 94vh;
       }
 
     }
@@ -1190,7 +1491,6 @@ function installDynamicStyles() {
   document.head.appendChild(style);
 
 }
-
 
 installDynamicStyles();
 
@@ -1244,7 +1544,6 @@ function loadTheme() {
 
 }
 
-
 loadTheme();
 
 
@@ -1260,9 +1559,7 @@ if (themeToggle) {
         );
 
       const newTheme =
-        isDark
-          ? "light"
-          : "dark";
+        isDark ? "light" : "dark";
 
       localStorage.setItem(
         "teamspaceTheme",
@@ -1279,7 +1576,7 @@ if (themeToggle) {
 
 /*
   ============================================================
-  MESSAGE LISTENER CLEANUP
+  LISTENER CLEANUP
   ============================================================
 */
 
@@ -1305,12 +1602,6 @@ function clearMessageListener() {
 }
 
 
-/*
-  ============================================================
-  SELECTED PRESENCE LISTENER CLEANUP
-  ============================================================
-*/
-
 function clearSelectedPresenceListener() {
 
   if (
@@ -1330,12 +1621,6 @@ function clearSelectedPresenceListener() {
 
 }
 
-
-/*
-  ============================================================
-  PRESENCE LISTENER CLEANUP
-  ============================================================
-*/
 
 function clearPresenceListeners() {
 
@@ -1379,12 +1664,6 @@ function clearPresenceListeners() {
 
 }
 
-
-/*
-  ============================================================
-  CLEAR ALL LISTENERS
-  ============================================================
-*/
 
 function clearAllListeners() {
 
@@ -1472,6 +1751,72 @@ function renderEmptyChat(
   ============================================================
 */
 
+function getProfilePhoto(profile) {
+
+  return (
+    profile?.photoURL ||
+    profile?.photo ||
+    ""
+  );
+
+}
+
+
+function setAvatarElement(
+  element,
+  profile,
+  fallbackName
+) {
+
+  if (!element) {
+    return;
+  }
+
+  const photo =
+    getProfilePhoto(profile);
+
+  const name =
+    profile?.name ||
+    fallbackName ||
+    "User";
+
+  element.innerHTML =
+    "";
+
+  if (photo) {
+
+    const img =
+      document.createElement("img");
+
+    img.src =
+      photo;
+
+    img.alt =
+      name;
+
+    img.style.width =
+      "100%";
+
+    img.style.height =
+      "100%";
+
+    img.style.objectFit =
+      "cover";
+
+    element.appendChild(
+      img
+    );
+
+  } else {
+
+    element.textContent =
+      initials(name);
+
+  }
+
+}
+
+
 function updateProfileUI() {
 
   const myName =
@@ -1506,17 +1851,1404 @@ function updateProfileUI() {
 
   }
 
-  if (myAvatar) {
+  setAvatarElement(
+    myAvatar,
+    currentProfile,
+    currentUser?.email
+  );
 
-    myAvatar.textContent =
-      initials(
-        currentProfile?.name ||
-        currentUser?.email
-      );
+  const profileArea =
+    document.querySelector(
+      ".profile"
+    );
+
+  if (profileArea) {
+
+    profileArea.classList.add(
+      "profile-clickable"
+    );
+
+    profileArea.title =
+      "Open your profile";
 
   }
 
 }
+
+
+function attachOwnProfileClick() {
+
+  const profileArea =
+    document.querySelector(
+      ".profile"
+    );
+
+  if (!profileArea) {
+    return;
+  }
+
+  if (
+    profileArea.dataset.profileHandlerAttached ===
+    "true"
+  ) {
+    return;
+  }
+
+  profileArea.dataset.profileHandlerAttached =
+    "true";
+
+  profileArea.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target.closest(
+          "#logoutBtn, #deleteAccountBtn, .account-btn"
+        )
+      ) {
+
+        return;
+
+      }
+
+      openOwnProfileModal();
+
+    }
+  );
+
+}
+
+
+/*
+  ============================================================
+  MODAL HELPERS
+  ============================================================
+*/
+
+function removeTeamspaceModal() {
+
+  document
+    .querySelectorAll(
+      ".teamspace-modal-overlay"
+    )
+    .forEach(
+      modal => modal.remove()
+    );
+
+}
+
+
+function createModal(
+  title
+) {
+
+  removeTeamspaceModal();
+
+  const overlay =
+    document.createElement(
+      "div"
+    );
+
+  overlay.className =
+    "teamspace-modal-overlay";
+
+  const modal =
+    document.createElement(
+      "div"
+    );
+
+  modal.className =
+    "teamspace-modal";
+
+  modal.innerHTML = `
+
+    <div
+      style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-bottom:18px
+      "
+    >
+
+      <h2 style="margin:0">
+        ${escapeHtml(title)}
+      </h2>
+
+      <button
+        class="teamspace-modal-close"
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div class="teamspace-modal-content"></div>
+
+  `;
+
+  overlay.appendChild(
+    modal
+  );
+
+  document.body.appendChild(
+    overlay
+  );
+
+  const closeButton =
+    modal.querySelector(
+      ".teamspace-modal-close"
+    );
+
+  closeButton.addEventListener(
+    "click",
+    () => overlay.remove()
+  );
+
+  overlay.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target ===
+        overlay
+      ) {
+
+        overlay.remove();
+
+      }
+
+    }
+  );
+
+  return {
+    overlay,
+    modal,
+    content:
+      modal.querySelector(
+        ".teamspace-modal-content"
+      )
+  };
+
+}
+
+
+/*
+  ============================================================
+  PROFILE PHOTO COMPRESSION
+  ============================================================
+*/
+
+function compressProfilePhoto(
+  file
+) {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        event => {
+
+          const image =
+            new Image();
+
+          image.onload =
+            () => {
+
+              const maxSize =
+                500;
+
+              let width =
+                image.width;
+
+              let height =
+                image.height;
+
+              if (
+                width >
+                  maxSize ||
+                height >
+                  maxSize
+              ) {
+
+                const ratio =
+                  Math.min(
+                    maxSize / width,
+                    maxSize / height
+                  );
+
+                width =
+                  Math.round(
+                    width * ratio
+                  );
+
+                height =
+                  Math.round(
+                    height * ratio
+                  );
+
+              }
+
+              const canvas =
+                document.createElement(
+                  "canvas"
+                );
+
+              canvas.width =
+                width;
+
+              canvas.height =
+                height;
+
+              const context =
+                canvas.getContext(
+                  "2d"
+                );
+
+              if (!context) {
+
+                reject(
+                  new Error(
+                    "Image compression is not supported."
+                  )
+                );
+
+                return;
+
+              }
+
+              context.drawImage(
+                image,
+                0,
+                0,
+                width,
+                height
+              );
+
+              let quality =
+                0.78;
+
+              let dataUrl =
+                canvas.toDataURL(
+                  "image/jpeg",
+                  quality
+                );
+
+              const maxBytes =
+                250 * 1024;
+
+              while (
+                dataUrl.length >
+                  maxBytes &&
+                quality >
+                  0.35
+              ) {
+
+                quality -=
+                  0.07;
+
+                dataUrl =
+                  canvas.toDataURL(
+                    "image/jpeg",
+                    quality
+                  );
+
+              }
+
+              resolve(
+                dataUrl
+              );
+
+            };
+
+          image.onerror =
+            () => {
+
+              reject(
+                new Error(
+                  "The selected photo could not be opened."
+                )
+              );
+
+            };
+
+          image.src =
+            event.target.result;
+
+        };
+
+      reader.onerror =
+        () => {
+
+          reject(
+            new Error(
+              "Unable to read the selected photo."
+            )
+          );
+
+        };
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+
+
+/*
+  ============================================================
+  EDIT OWN PROFILE
+  ============================================================
+*/
+
+function openOwnProfileModal() {
+
+  if (!currentUser) {
+    return;
+  }
+
+  const modal =
+    createModal(
+      "My Profile"
+    );
+
+  const photo =
+    getProfilePhoto(
+      currentProfile
+    );
+
+  modal.content.innerHTML = `
+
+    <div class="teamspace-profile-preview">
+
+      <div
+        id="teamspaceProfilePreview"
+        class="teamspace-profile-preview-avatar"
+      >
+      </div>
+
+      <label class="teamspace-photo-label">
+
+        Change profile photo
+
+        <input
+          id="teamspaceProfilePhoto"
+          type="file"
+          accept="image/*"
+        >
+
+      </label>
+
+    </div>
+
+    <div class="teamspace-form-group">
+
+      <label for="teamspaceProfileName">
+        Full name
+      </label>
+
+      <input
+        id="teamspaceProfileName"
+        class="teamspace-form-input"
+        type="text"
+        maxlength="80"
+        value="${escapeHtml(
+          currentProfile?.name ||
+          currentUser.email ||
+          ""
+        )}"
+      >
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Email
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${escapeHtml(
+          currentUser.email ||
+          ""
+        )}
+      </div>
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Member since
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${escapeHtml(
+          formatDate(
+            currentProfile?.createdAt
+          ) ||
+          "Not available"
+        )}
+      </div>
+
+    </div>
+
+    <div
+      id="teamspaceProfileError"
+      style="
+        color:#dc2626;
+        min-height:20px;
+        margin-top:12px
+      "
+    ></div>
+
+    <div class="teamspace-modal-actions">
+
+      <button
+        id="teamspaceCancelProfile"
+        class="teamspace-modal-btn teamspace-secondary-btn"
+        type="button"
+      >
+        Cancel
+      </button>
+
+      <button
+        id="teamspaceSaveProfile"
+        class="teamspace-modal-btn teamspace-primary-btn"
+        type="button"
+      >
+        Save Changes
+      </button>
+
+    </div>
+
+  `;
+
+  const preview =
+    document.getElementById(
+      "teamspaceProfilePreview"
+    );
+
+  const photoInput =
+    document.getElementById(
+      "teamspaceProfilePhoto"
+    );
+
+  const nameElement =
+    document.getElementById(
+      "teamspaceProfileName"
+    );
+
+  const errorElement =
+    document.getElementById(
+      "teamspaceProfileError"
+    );
+
+  const saveButton =
+    document.getElementById(
+      "teamspaceSaveProfile"
+    );
+
+  const cancelButton =
+    document.getElementById(
+      "teamspaceCancelProfile"
+    );
+
+  function updatePreview(
+    imageUrl
+  ) {
+
+    preview.innerHTML =
+      "";
+
+    if (imageUrl) {
+
+      const img =
+        document.createElement(
+          "img"
+        );
+
+      img.src =
+        imageUrl;
+
+      img.alt =
+        "Profile photo";
+
+      preview.appendChild(
+        img
+      );
+
+    } else {
+
+      preview.textContent =
+        initials(
+          nameElement.value ||
+          currentProfile?.name
+        );
+
+    }
+
+  }
+
+  updatePreview(photo);
+
+  nameElement.addEventListener(
+    "input",
+    () => {
+
+      if (
+        !getProfilePhoto(
+          currentProfile
+        )
+      ) {
+
+        updatePreview("");
+
+      }
+
+    }
+  );
+
+  photoInput.addEventListener(
+    "change",
+    async event => {
+
+      const file =
+        event.target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
+
+        errorElement.textContent =
+          "Please select an image.";
+
+        return;
+
+      }
+
+      if (
+        file.size >
+        5 * 1024 * 1024
+      ) {
+
+        errorElement.textContent =
+          "Profile photo must be 5 MB or smaller.";
+
+        return;
+
+      }
+
+      try {
+
+        errorElement.textContent =
+          "Processing photo...";
+
+        const compressed =
+          await compressProfilePhoto(
+            file
+          );
+
+        updatePreview(
+          compressed
+        );
+
+        preview.dataset.newPhoto =
+          compressed;
+
+        errorElement.textContent =
+          "";
+
+      } catch (error) {
+
+        console.error(
+          "Profile photo error:",
+          error
+        );
+
+        errorElement.textContent =
+          error.message;
+
+      }
+
+    }
+  );
+
+  cancelButton.addEventListener(
+    "click",
+    () => modal.overlay.remove()
+  );
+
+  saveButton.addEventListener(
+    "click",
+    async () => {
+
+      const name =
+        nameElement.value.trim();
+
+      if (!name) {
+
+        errorElement.textContent =
+          "Please enter your name.";
+
+        return;
+
+      }
+
+      if (name.length > 80) {
+
+        errorElement.textContent =
+          "Your name must be 80 characters or less.";
+
+        return;
+
+      }
+
+      saveButton.disabled =
+        true;
+
+      saveButton.textContent =
+        "Saving...";
+
+      errorElement.textContent =
+        "";
+
+      try {
+
+        const updates = {
+          name
+        };
+
+        if (
+          preview.dataset.newPhoto
+        ) {
+
+          updates.photoURL =
+            preview.dataset.newPhoto;
+
+        }
+
+        await db.ref(
+          "users/" +
+          currentUser.uid
+        ).update(
+          updates
+        );
+
+        await currentUser.updateProfile({
+
+          displayName:
+            name,
+
+          ...(updates.photoURL
+            ? {
+                photoURL:
+                  updates.photoURL
+              }
+            : {})
+
+        });
+
+        currentProfile = {
+
+          ...currentProfile,
+
+          ...updates
+
+        };
+
+        updateProfileUI();
+
+        attachOwnProfileClick();
+
+        availableUsers =
+          availableUsers.map(
+            user =>
+              user.uid ===
+              currentUser.uid
+                ? {
+                    ...user,
+                    ...updates
+                  }
+                : user
+          );
+
+        chattedUsers =
+          chattedUsers.map(
+            user =>
+              user.uid ===
+              currentUser.uid
+                ? {
+                    ...user,
+                    ...updates
+                  }
+                : user
+          );
+
+        if (
+          currentWorkspace ===
+          "chat"
+        ) {
+
+          renderChatList();
+
+        } else if (
+          currentWorkspace ===
+          "people"
+        ) {
+
+          renderUsers();
+
+        }
+
+        if (
+          selectedUser?.uid ===
+          currentUser.uid
+        ) {
+
+          selectedUser = {
+            ...selectedUser,
+            ...updates
+          };
+
+        }
+
+        modal.overlay.remove();
+
+      } catch (error) {
+
+        console.error(
+          "Profile update error:",
+          error
+        );
+
+        errorElement.textContent =
+          firebaseError(error);
+
+      } finally {
+
+        saveButton.disabled =
+          false;
+
+        saveButton.textContent =
+          "Save Changes";
+
+      }
+
+    }
+  );
+
+}
+
+
+/*
+  ============================================================
+  VIEW OTHER USER PROFILE
+  ============================================================
+*/
+
+function openUserProfileModal(
+  user
+) {
+
+  if (!user) {
+    return;
+  }
+
+  const modal =
+    createModal(
+      user.name ||
+      "User Profile"
+    );
+
+  modal.content.innerHTML = `
+
+    <div
+      style="
+        display:flex;
+        justify-content:center;
+        margin-bottom:20px
+      "
+    >
+
+      <div
+        id="teamspaceUserProfileAvatar"
+        class="teamspace-profile-preview-avatar"
+      ></div>
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Name
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${escapeHtml(
+          user.name ||
+          "Unnamed user"
+        )}
+      </div>
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Email
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${escapeHtml(
+          user.email ||
+          ""
+        )}
+      </div>
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Member since
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${escapeHtml(
+          formatDate(
+            user.createdAt
+          ) ||
+          "Not available"
+        )}
+      </div>
+
+    </div>
+
+    <div
+      id="teamspaceUserProfileStatus"
+      class="teamspace-detail-row"
+    >
+
+      <div class="teamspace-detail-label">
+        Status
+      </div>
+
+      <div class="teamspace-detail-value">
+        Checking...
+      </div>
+
+    </div>
+
+    <div class="teamspace-modal-actions">
+
+      <button
+        id="teamspaceProfileChat"
+        class="teamspace-modal-btn teamspace-primary-btn"
+        type="button"
+      >
+        💬 Start Chat
+      </button>
+
+    </div>
+
+  `;
+
+  const avatar =
+    document.getElementById(
+      "teamspaceUserProfileAvatar"
+    );
+
+  setAvatarElement(
+    avatar,
+    user,
+    user.name
+  );
+
+  const statusValue =
+    modal.content.querySelector(
+      "#teamspaceUserProfileStatus .teamspace-detail-value"
+    );
+
+  const presenceRef =
+    db.ref(
+      "presence/" +
+      user.uid
+    );
+
+  const presenceCallback =
+    snapshot => {
+
+      const presence =
+        snapshot.val();
+
+      if (
+        presence?.state ===
+        "online"
+      ) {
+
+        statusValue.textContent =
+          "● Online";
+
+      } else {
+
+        statusValue.textContent =
+          formatLastSeen(
+            presence?.lastChanged
+          );
+
+      }
+
+    };
+
+  presenceRef.on(
+    "value",
+    presenceCallback
+  );
+
+  const cleanupPresence =
+    () => {
+
+      presenceRef.off(
+        "value",
+        presenceCallback
+      );
+
+    };
+
+  const closeButton =
+    modal.modal.querySelector(
+      ".teamspace-modal-close"
+    );
+
+  closeButton.onclick =
+    () => {
+
+      cleanupPresence();
+      modal.overlay.remove();
+
+    };
+
+  modal.overlay.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target ===
+        modal.overlay
+      ) {
+
+        cleanupPresence();
+        modal.overlay.remove();
+
+      }
+
+    }
+  );
+
+  document
+    .getElementById(
+      "teamspaceProfileChat"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        cleanupPresence();
+
+        modal.overlay.remove();
+
+        selectUser(
+          user
+        );
+
+      }
+    );
+
+}
+
+
+/*
+  ============================================================
+  GROUP DETAILS
+  ============================================================
+*/
+
+async function openGroupDetails(
+  group
+) {
+
+  if (
+    !group ||
+    !currentUser
+  ) {
+
+    return;
+
+  }
+
+  /*
+    Safety:
+    Group details should only be opened for
+    the group currently selected in the chat.
+  */
+
+  if (
+    !selectedGroup ||
+    selectedGroup.id !== group.id
+  ) {
+
+    return;
+
+  }
+
+  const modal =
+    createModal(
+      group.name ||
+      "Group Details"
+    );
+
+  modal.content.innerHTML = `
+
+    <div
+      style="
+        display:flex;
+        justify-content:center;
+        margin-bottom:18px
+      "
+    >
+
+      <div
+        class="teamspace-profile-preview-avatar"
+      >
+        ${escapeHtml(
+          initials(group.name) ||
+          "G"
+        )}
+      </div>
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Group name
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${escapeHtml(
+          group.name ||
+          "Unnamed group"
+        )}
+      </div>
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Members
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${group.memberCount || 0}
+      </div>
+
+    </div>
+
+    <div class="teamspace-detail-row">
+
+      <div class="teamspace-detail-label">
+        Created
+      </div>
+
+      <div class="teamspace-detail-value">
+        ${escapeHtml(
+          formatDate(
+            group.createdAt
+          ) ||
+          "Not available"
+        )}
+      </div>
+
+    </div>
+
+    <h3 style="margin-top:22px">
+      Group Members
+    </h3>
+
+    <div id="teamspaceGroupMembers">
+      Loading members...
+    </div>
+
+    <div
+      id="teamspaceGroupDetailsError"
+      style="
+        color:#dc2626;
+        margin-top:10px
+      "
+    ></div>
+
+    <div class="teamspace-modal-actions">
+
+      <button
+        id="teamspaceCloseGroupDetails"
+        class="teamspace-modal-btn teamspace-secondary-btn"
+        type="button"
+      >
+        Close
+      </button>
+
+      <button
+        id="teamspaceOpenGroupChat"
+        class="teamspace-modal-btn teamspace-primary-btn"
+        type="button"
+      >
+        💬 Back to Group Chat
+      </button>
+
+    </div>
+
+  `;
+
+  const membersBox =
+    document.getElementById(
+      "teamspaceGroupMembers"
+    );
+
+  const errorBox =
+    document.getElementById(
+      "teamspaceGroupDetailsError"
+    );
+
+  try {
+
+    const members =
+      Object.keys(
+        group.members || {}
+      );
+
+    if (!members.length) {
+
+      membersBox.textContent =
+        "No members found.";
+
+    } else {
+
+      const memberSnapshots =
+        await Promise.all(
+          members.map(
+            uid =>
+              db.ref(
+                "users/" +
+                uid
+              ).once("value")
+          )
+        );
+
+      membersBox.innerHTML =
+        "";
+
+      memberSnapshots.forEach(
+        snapshot => {
+
+          const profile =
+            snapshot.val();
+
+          if (!profile) {
+            return;
+          }
+
+          const member =
+            document.createElement(
+              "div"
+            );
+
+          member.className =
+            "teamspace-member";
+
+          const avatar =
+            document.createElement(
+              "div"
+            );
+
+          avatar.className =
+            "teamspace-small-avatar";
+
+          setAvatarElement(
+            avatar,
+            profile,
+            profile.name
+          );
+
+          const info =
+            document.createElement(
+              "div"
+            );
+
+          info.className =
+            "teamspace-member-info";
+
+          const name =
+            document.createElement(
+              "strong"
+            );
+
+          name.textContent =
+            profile.name ||
+            "Unnamed user";
+
+          const email =
+            document.createElement(
+              "span"
+            );
+
+          email.textContent =
+            profile.email ||
+            "";
+
+          info.appendChild(
+            name
+          );
+
+          info.appendChild(
+            email
+          );
+
+          if (
+            profile.uid ===
+            group.createdBy
+          ) {
+
+            const creator =
+              document.createElement(
+                "small"
+              );
+
+            creator.textContent =
+              "Group creator";
+
+            creator.style.display =
+              "block";
+
+            creator.style.opacity =
+              ".65";
+
+            info.appendChild(
+              creator
+            );
+
+          }
+
+          member.appendChild(
+            avatar
+          );
+
+          member.appendChild(
+            info
+          );
+
+          member.style.cursor =
+            "pointer";
+
+          member.addEventListener(
+            "click",
+            () => {
+
+              if (
+                profile.uid ===
+                currentUser.uid
+              ) {
+
+                openOwnProfileModal();
+
+              } else {
+
+                openUserProfileModal(
+                  profile
+                );
+
+              }
+
+            }
+          );
+
+          membersBox.appendChild(
+            member
+          );
+
+        }
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Group details error:",
+      error
+    );
+
+    errorBox.textContent =
+      firebaseError(error);
+
+  }
+
+  document
+    .getElementById(
+      "teamspaceCloseGroupDetails"
+    )
+    .addEventListener(
+      "click",
+      () => modal.overlay.remove()
+    );
+
+  document
+    .getElementById(
+      "teamspaceOpenGroupChat"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        modal.overlay.remove();
+
+        /*
+          The group conversation is already open.
+          No details are opened here.
+        */
+
+        selectGroup(
+          group
+        );
+
+      }
+    );
+
+}
+
+
+/*
+  ============================================================
+  MAKE OWN PROFILE CLICKABLE
+  ============================================================
+*/
+
+attachOwnProfileClick();
 
 
 /*
@@ -1537,13 +3269,10 @@ document
           document
             .querySelectorAll(".tab")
             .forEach(
-              item => {
-
+              item =>
                 item.classList.remove(
                   "active"
-                );
-
-              }
+                )
             );
 
           tab.classList.add(
@@ -1744,7 +3473,7 @@ if (authForm) {
 
 /*
   ============================================================
-  PRESENCE SYSTEM
+  PRESENCE
   ============================================================
 */
 
@@ -1803,23 +3532,17 @@ function startPresence() {
           offlineData
         )
         .then(
-          () => {
-
-            return presenceRef.set(
+          () =>
+            presenceRef.set(
               onlineData
-            );
-
-          }
+            )
         )
         .catch(
-          error => {
-
+          error =>
             console.error(
               "Presence error:",
               error
-            );
-
-          }
+            )
         );
 
     };
@@ -1831,12 +3554,6 @@ function startPresence() {
 
 }
 
-
-/*
-  ============================================================
-  MARK CURRENT USER OFFLINE
-  ============================================================
-*/
 
 async function markCurrentUserOffline() {
 
@@ -1872,12 +3589,6 @@ async function markCurrentUserOffline() {
 }
 
 
-/*
-  ============================================================
-  STOP PRESENCE
-  ============================================================
-*/
-
 function stopPresenceListener() {
 
   if (
@@ -1897,12 +3608,6 @@ function stopPresenceListener() {
 
 }
 
-
-/*
-  ============================================================
-  SELECTED USER PRESENCE
-  ============================================================
-*/
 
 function listenToUserPresence(user) {
 
@@ -1993,7 +3698,7 @@ function listenToUserPresence(user) {
 
 /*
   ============================================================
-  CREATE GROUP INTERFACE
+  CREATE GROUP BUTTON
   ============================================================
 */
 
@@ -2126,16 +3831,13 @@ function setWorkspace(workspace) {
 
   if (listTitle) {
 
-    const titles = {
+    listTitle.textContent = {
 
       chat: "Chats",
       people: "People",
       groups: "Groups"
 
-    };
-
-    listTitle.textContent =
-      titles[workspace];
+    }[workspace];
 
   }
 
@@ -2163,9 +3865,7 @@ function setWorkspace(workspace) {
 
     renderUsers();
 
-  } else if (
-    workspace === "groups"
-  ) {
+  } else {
 
     renderGroups();
 
@@ -2178,45 +3878,25 @@ if (chatNav) {
 
   chatNav.addEventListener(
     "click",
-    () => {
-
-      setWorkspace(
-        "chat"
-      );
-
-    }
+    () => setWorkspace("chat")
   );
 
 }
-
 
 if (peopleNav) {
 
   peopleNav.addEventListener(
     "click",
-    () => {
-
-      setWorkspace(
-        "people"
-      );
-
-    }
+    () => setWorkspace("people")
   );
 
 }
-
 
 if (groupsNav) {
 
   groupsNav.addEventListener(
     "click",
-    () => {
-
-      setWorkspace(
-        "groups"
-      );
-
-    }
+    () => setWorkspace("groups")
   );
 
 }
@@ -2224,7 +3904,7 @@ if (groupsNav) {
 
 /*
   ============================================================
-  GROUP CREATION MODAL
+  CREATE GROUP MODAL
   ============================================================
 */
 
@@ -2244,57 +3924,16 @@ function openCreateGroupModal() {
   overlay.id =
     "teamspaceGroupModal";
 
-  Object.assign(
-    overlay.style,
-    {
-
-      position: "fixed",
-      inset: "0",
-      background: "rgba(0,0,0,.55)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: "9999",
-      padding: "20px",
-      boxSizing: "border-box"
-
-    }
-  );
+  overlay.className =
+    "teamspace-modal-overlay";
 
   const modal =
     document.createElement(
       "div"
     );
 
-  const dark =
-    document.body.classList.contains(
-      "dark-mode"
-    );
-
-  Object.assign(
-    modal.style,
-    {
-
-      background:
-        dark
-          ? "#1f2937"
-          : "#fff",
-
-      color:
-        dark
-          ? "#fff"
-          : "#222",
-
-      width: "100%",
-      maxWidth: "480px",
-      maxHeight: "90vh",
-      overflowY: "auto",
-      borderRadius: "14px",
-      padding: "24px",
-      boxSizing: "border-box"
-
-    }
-  );
+  modal.className =
+    "teamspace-modal";
 
   modal.innerHTML = `
 
@@ -2315,17 +3954,11 @@ function openCreateGroupModal() {
 
     <input
       id="teamspaceGroupName"
+      class="teamspace-form-input"
       type="text"
       maxlength="80"
       placeholder="Group Name"
-      style="
-        width:100%;
-        box-sizing:border-box;
-        padding:12px;
-        border:1px solid #ccc;
-        border-radius:8px;
-        margin-bottom:18px
-      "
+      style="margin-bottom:18px"
     >
 
     <label
@@ -2358,42 +3991,20 @@ function openCreateGroupModal() {
       "
     ></div>
 
-    <div
-      style="
-        display:flex;
-        gap:10px;
-        justify-content:flex-end;
-        margin-top:18px;
-        flex-wrap:wrap
-      "
-    >
+    <div class="teamspace-modal-actions">
 
       <button
         id="teamspaceCancelGroup"
+        class="teamspace-modal-btn teamspace-secondary-btn"
         type="button"
-        style="
-          padding:10px 16px;
-          border:1px solid #ccc;
-          background:#fff;
-          border-radius:8px;
-          cursor:pointer
-        "
       >
         Cancel
       </button>
 
       <button
         id="teamspaceCreateGroup"
+        class="teamspace-modal-btn teamspace-primary-btn"
         type="button"
-        style="
-          padding:10px 16px;
-          border:none;
-          background:#1f5eff;
-          color:#fff;
-          border-radius:8px;
-          cursor:pointer;
-          font-weight:600
-        "
       >
         Create Group
       </button>
@@ -2546,12 +4157,6 @@ function openCreateGroupModal() {
 }
 
 
-/*
-  ============================================================
-  CREATE GROUP
-  ============================================================
-*/
-
 async function createGroup() {
 
   const nameElement =
@@ -2589,15 +4194,12 @@ async function createGroup() {
     );
 
   const memberIds = [
-
     currentUser.uid,
-
     ...Array.from(
       checked
     ).map(
       input => input.value
     )
-
   ];
 
   errorElement.textContent =
@@ -2648,10 +4250,7 @@ async function createGroup() {
 
     memberIds.forEach(
       uid => {
-
-        members[uid] =
-          true;
-
+        members[uid] = true;
       }
     );
 
@@ -2677,15 +4276,22 @@ async function createGroup() {
       group
     );
 
-    document
-      .getElementById(
-        "teamspaceGroupModal"
-      )
-      ?.remove();
+    overlayRemoveIfExists(
+      "teamspaceGroupModal"
+    );
+
+    /*
+      Switch to Groups first.
+    */
 
     setWorkspace(
       "groups"
     );
+
+    /*
+      Open the group conversation.
+      DO NOT open group details here.
+    */
 
     selectGroup({
 
@@ -2718,6 +4324,17 @@ async function createGroup() {
       "Create Group";
 
   }
+
+}
+
+
+function overlayRemoveIfExists(
+  id
+) {
+
+  document
+    .getElementById(id)
+    ?.remove();
 
 }
 
@@ -2821,12 +4438,6 @@ function listenToUsers() {
 }
 
 
-/*
-  ============================================================
-  LOAD USERS WITH EXISTING PRIVATE CHATS
-  ============================================================
-*/
-
 async function loadChattedUsers() {
 
   if (
@@ -2862,12 +4473,9 @@ async function loadChattedUsers() {
       new Set();
 
     /*
-      Instead of trying to split the chat ID,
-      calculate each possible chat ID.
-
-      This is safer because Firebase UIDs
-      should not be assumed to have a specific
-      delimiter format.
+      Do not try to split chat IDs.
+      Instead compare each known user against
+      the generated private chat ID.
     */
 
     availableUsers.forEach(
@@ -2950,6 +4558,166 @@ async function loadChattedUsers() {
 
 /*
   ============================================================
+  USER LIST ITEM
+  ============================================================
+*/
+
+function createUserListItem(
+  user
+) {
+
+  if (!userList) {
+    return;
+  }
+
+  const item =
+    document.createElement(
+      "div"
+    );
+
+  item.className =
+    "user-item";
+
+  item.dataset.id =
+    user.uid;
+
+  if (
+    selectedUser?.uid ===
+    user.uid
+  ) {
+
+    item.classList.add(
+      "selected"
+    );
+
+  }
+
+  const avatar =
+    document.createElement(
+      "div"
+    );
+
+  avatar.className =
+    "user-avatar";
+
+  avatar.classList.add(
+    "profile-clickable"
+  );
+
+  setAvatarElement(
+    avatar,
+    user,
+    user.name
+  );
+
+  avatar.title =
+    "View profile";
+
+  const info =
+    document.createElement(
+      "div"
+    );
+
+  info.className =
+    "user-info";
+
+  const name =
+    document.createElement(
+      "strong"
+    );
+
+  name.textContent =
+    user.name ||
+    "Unnamed user";
+
+  name.classList.add(
+    "profile-clickable"
+  );
+
+  name.title =
+    "View profile";
+
+  const email =
+    document.createElement(
+      "span"
+    );
+
+  email.textContent =
+    user.email ||
+    "";
+
+  info.appendChild(
+    name
+  );
+
+  info.appendChild(
+    email
+  );
+
+  item.appendChild(
+    avatar
+  );
+
+  item.appendChild(
+    info
+  );
+
+  /*
+    Clicking the main row opens
+    the conversation.
+  */
+
+  item.addEventListener(
+    "click",
+    () => {
+
+      selectUser(
+        user
+      );
+
+    }
+  );
+
+  /*
+    Clicking avatar/name opens
+    profile instead.
+  */
+
+  avatar.addEventListener(
+    "click",
+    event => {
+
+      event.stopPropagation();
+
+      openUserProfileModal(
+        user
+      );
+
+    }
+  );
+
+  name.addEventListener(
+    "click",
+    event => {
+
+      event.stopPropagation();
+
+      openUserProfileModal(
+        user
+      );
+
+    }
+  );
+
+  userList.appendChild(
+    item
+  );
+
+}
+
+
+/*
+  ============================================================
   RENDER CHAT LIST
   ============================================================
 */
@@ -2997,121 +4765,6 @@ function renderChatList() {
 }
 
 
-/*
-  ============================================================
-  CREATE USER LIST ITEM
-  ============================================================
-*/
-
-function createUserListItem(
-  user
-) {
-
-  if (!userList) {
-    return;
-  }
-
-  const item =
-    document.createElement(
-      "div"
-    );
-
-  item.className =
-    "user-item";
-
-  item.dataset.id =
-    user.uid;
-
-  if (
-    selectedUser?.uid ===
-    user.uid
-  ) {
-
-    item.classList.add(
-      "selected"
-    );
-
-  }
-
-  const avatar =
-    document.createElement(
-      "div"
-    );
-
-  avatar.className =
-    "user-avatar";
-
-  avatar.textContent =
-    initials(
-      user.name
-    );
-
-  const info =
-    document.createElement(
-      "div"
-    );
-
-  info.className =
-    "user-info";
-
-  const name =
-    document.createElement(
-      "strong"
-    );
-
-  name.textContent =
-    user.name ||
-    "Unnamed user";
-
-  const email =
-    document.createElement(
-      "span"
-    );
-
-  email.textContent =
-    user.email ||
-    "";
-
-  info.appendChild(
-    name
-  );
-
-  info.appendChild(
-    email
-  );
-
-  item.appendChild(
-    avatar
-  );
-
-  item.appendChild(
-    info
-  );
-
-  item.addEventListener(
-    "click",
-    () => {
-
-      selectUser(
-        user
-      );
-
-    }
-  );
-
-  userList.appendChild(
-    item
-  );
-
-}
-
-
-/*
-  ============================================================
-  RENDER USERS / PEOPLE
-  ============================================================
-*/
-
 function renderUsers() {
 
   if (!userList) {
@@ -3128,12 +4781,6 @@ function renderUsers() {
       <div class="no-users">
 
         No other accounts yet.
-
-        <br><br>
-
-        Create another account in
-        a private browser window
-        to test messaging.
 
       </div>
 
@@ -3158,7 +4805,7 @@ function renderUsers() {
 
 /*
   ============================================================
-  LISTEN TO GROUPS
+  GROUPS
   ============================================================
 */
 
@@ -3212,12 +4859,8 @@ function listenToGroups() {
 
       groups.sort(
         (a, b) =>
-          (
-            b.createdAt || 0
-          ) -
-          (
-            a.createdAt || 0
-          )
+          (b.createdAt || 0) -
+          (a.createdAt || 0)
       );
 
       groupCache =
@@ -3229,6 +4872,64 @@ function listenToGroups() {
             ]
           )
         );
+
+      /*
+        If the currently selected group still
+        exists, refresh the selected group
+        object with the newest database data.
+      */
+
+      if (selectedGroup?.id) {
+
+        const updatedSelectedGroup =
+          groupCache[
+            selectedGroup.id
+          ];
+
+        if (updatedSelectedGroup) {
+
+          selectedGroup =
+            updatedSelectedGroup;
+
+          /*
+            If the group conversation is currently
+            open, update the header information.
+          */
+
+          if (
+            chatUserName &&
+            selectedUser === null
+          ) {
+
+            chatUserName.textContent =
+              updatedSelectedGroup.name ||
+              "Group";
+
+          }
+
+          if (
+            chatStatus &&
+            selectedUser === null
+          ) {
+
+            const count =
+              updatedSelectedGroup.memberCount ||
+              0;
+
+            chatStatus.textContent =
+              count +
+              " member" +
+              (
+                count === 1
+                  ? ""
+                  : "s"
+              );
+
+          }
+
+        }
+
+      }
 
       if (
         currentWorkspace ===
@@ -3272,12 +4973,6 @@ function listenToGroups() {
 
 }
 
-
-/*
-  ============================================================
-  RENDER GROUPS
-  ============================================================
-*/
 
 function renderGroups() {
 
@@ -3404,6 +5099,14 @@ function renderGroups() {
         info
       );
 
+      /*
+        IMPORTANT:
+        Clicking the group in the Groups list
+        opens the group conversation ONLY.
+
+        It does NOT open Group Details.
+      */
+
       item.addEventListener(
         "click",
         () => {
@@ -3450,6 +5153,15 @@ function selectUser(
   selectedGroup =
     null;
 
+  /*
+    Private chat header must NOT be clickable
+    for group details.
+  */
+
+  setGroupHeaderClickable(
+    false
+  );
+
   clearMessageListener();
   clearPresenceListeners();
 
@@ -3491,10 +5203,11 @@ function selectUser(
 
   if (chatUserAvatar) {
 
-    chatUserAvatar.textContent =
-      initials(
-        user.name
-      );
+    setAvatarElement(
+      chatUserAvatar,
+      user,
+      user.name
+    );
 
   }
 
@@ -3520,13 +5233,10 @@ function selectUser(
       user.uid
     );
 
-  const path =
+  listenToMessages(
     "privateChats/" +
     chatId +
-    "/messages";
-
-  listenToMessages(
-    path,
+    "/messages",
     false
   );
 
@@ -3552,11 +5262,54 @@ function selectGroup(
 
   }
 
+  /*
+    Accept either a complete group object
+    or a group ID.
+  */
+
+  if (typeof group === "string") {
+
+    group =
+      groupCache[group];
+
+  }
+
+  if (!group) {
+    return;
+  }
+
+  /*
+    Make sure the latest cached version is
+    used whenever possible.
+  */
+
+  if (
+    group.id &&
+    groupCache[group.id]
+  ) {
+
+    group = {
+      ...groupCache[group.id],
+      ...group
+    };
+
+  }
+
   selectedGroup =
     group;
 
   selectedUser =
     null;
+
+  /*
+    IMPORTANT:
+    A group conversation can now be opened
+    without opening Group Details.
+  */
+
+  setGroupHeaderClickable(
+    true
+  );
 
   clearMessageListener();
   clearPresenceListeners();
@@ -3587,11 +5340,19 @@ function selectGroup(
 
   if (chatStatus) {
 
+    const count =
+      group.memberCount ||
+      Object.keys(
+        group.members ||
+        {}
+      ).length ||
+      0;
+
     chatStatus.textContent =
-      group.memberCount +
+      count +
       " member" +
       (
-        group.memberCount === 1
+        count === 1
           ? ""
           : "s"
       );
@@ -3604,6 +5365,9 @@ function selectGroup(
   }
 
   if (chatUserAvatar) {
+
+    chatUserAvatar.innerHTML =
+      "";
 
     chatUserAvatar.textContent =
       initials(
@@ -3624,6 +5388,10 @@ function selectGroup(
   if (messageInput) {
     messageInput.focus();
   }
+
+  /*
+    Listen to the group messages.
+  */
 
   listenToMessages(
     "groups/" +
@@ -3684,19 +5452,9 @@ function listenToMessages(
 
       messages.sort(
         (a, b) =>
-          (
-            a.createdAt || 0
-          ) -
-          (
-            b.createdAt || 0
-          )
+          (a.createdAt || 0) -
+          (b.createdAt || 0)
       );
-
-      /*
-        A private conversation only becomes
-        part of Chat when an actual message
-        exists.
-      */
 
       if (
         !isGroup &&
@@ -3737,12 +5495,6 @@ function listenToMessages(
 
 }
 
-
-/*
-  ============================================================
-  ENSURE USER IS IN CHAT LIST
-  ============================================================
-*/
 
 function ensureUserInChatList(
   user
@@ -3804,12 +5556,6 @@ function renderMessages(
   if (!messagesBox) {
     return;
   }
-
-  /*
-    Check whether the user is already
-    near the bottom before rebuilding
-    the message list.
-  */
 
   const distanceFromBottom =
     messagesBox.scrollHeight -
@@ -3883,10 +5629,6 @@ function renderMessages(
       bubble.className =
         "message";
 
-      /*
-        GROUP SENDER
-      */
-
       if (
         isGroup &&
         !mine
@@ -3909,10 +5651,6 @@ function renderMessages(
         );
 
       }
-
-      /*
-        IMAGE MESSAGE
-      */
 
       if (
         message.type === "image" &&
@@ -3939,24 +5677,17 @@ function renderMessages(
 
         image.addEventListener(
           "click",
-          () => {
-
+          () =>
             openImageViewer(
               message.imageUrl,
               message.imageName ||
               "TeamSpace Photo"
-            );
-
-          }
+            )
         );
 
         bubble.appendChild(
           image
         );
-
-        /*
-          IMAGE CAPTION
-        */
 
         if (message.body) {
 
@@ -3997,10 +5728,6 @@ function renderMessages(
 
       }
 
-      /*
-        TIME
-      */
-
       const time =
         document.createElement(
           "div"
@@ -4028,12 +5755,6 @@ function renderMessages(
 
     }
   );
-
-  /*
-    Scroll to latest message when:
-    - opening a conversation
-    - already near the bottom
-  */
 
   requestAnimationFrame(
     () => {
@@ -4069,9 +5790,7 @@ function openImageViewer(
     );
 
   if (!newWindow) {
-
     return;
-
   }
 
   const safeUrl =
@@ -4091,20 +5810,14 @@ function openImageViewer(
   newWindow.document.write(
     `
     <!DOCTYPE html>
-
     <html>
-
     <head>
-
       <title>${safeName}</title>
-
       <meta
         name="viewport"
         content="width=device-width, initial-scale=1"
       >
-
       <style>
-
         html,
         body {
           margin:0;
@@ -4128,9 +5841,7 @@ function openImageViewer(
           height:auto;
           object-fit:contain;
         }
-
       </style>
-
     </head>
 
     <body>
@@ -4141,7 +5852,6 @@ function openImageViewer(
       >
 
     </body>
-
     </html>
     `
   );
@@ -4173,18 +5883,14 @@ if (messageForm) {
         !body ||
         !currentUser
       ) {
-
         return;
-
       }
 
       if (
         !selectedUser &&
         !selectedGroup
       ) {
-
         return;
-
       }
 
       if (body.length > 5000) {
@@ -4257,11 +5963,6 @@ if (messageForm) {
           message
         );
 
-        /*
-          Immediately show the private
-          conversation under Chat.
-        */
-
         if (selectedUser) {
 
           ensureUserInChatList(
@@ -4278,10 +5979,8 @@ if (messageForm) {
         );
 
         if (messageInput) {
-
           messageInput.value =
             originalBody;
-
         }
 
         alert(
@@ -4295,12 +5994,6 @@ if (messageForm) {
 
 }
 
-
-/*
-  ============================================================
-  ENTER TO SEND
-  ============================================================
-*/
 
 if (messageInput) {
 
@@ -4371,30 +6064,24 @@ function compressImage(
                 image.height;
 
               if (
-                width >
-                  maxWidth ||
-                height >
-                  maxHeight
+                width > maxWidth ||
+                height > maxHeight
               ) {
 
                 const ratio =
                   Math.min(
-                    maxWidth /
-                      width,
-                    maxHeight /
-                      height
+                    maxWidth / width,
+                    maxHeight / height
                   );
 
                 width =
                   Math.round(
-                    width *
-                    ratio
+                    width * ratio
                   );
 
                 height =
                   Math.round(
-                    height *
-                    ratio
+                    height * ratio
                   );
 
               }
@@ -4460,8 +6147,7 @@ function compressImage(
               while (
                 dataUrl.length >
                   maxBytes &&
-                quality >
-                  0.35
+                quality > 0.35
               ) {
 
                 quality -=
@@ -4471,55 +6157,6 @@ function compressImage(
                   canvas.toDataURL(
                     "image/jpeg",
                     quality
-                  );
-
-              }
-
-              if (
-                dataUrl.length >
-                maxBytes
-              ) {
-
-                const smallerWidth =
-                  Math.round(
-                    width *
-                    0.75
-                  );
-
-                const smallerHeight =
-                  Math.round(
-                    height *
-                    0.75
-                  );
-
-                canvas.width =
-                  smallerWidth;
-
-                canvas.height =
-                  smallerHeight;
-
-                context.fillStyle =
-                  "#ffffff";
-
-                context.fillRect(
-                  0,
-                  0,
-                  smallerWidth,
-                  smallerHeight
-                );
-
-                context.drawImage(
-                  image,
-                  0,
-                  0,
-                  smallerWidth,
-                  smallerHeight
-                );
-
-                dataUrl =
-                  canvas.toDataURL(
-                    "image/jpeg",
-                    0.65
                   );
 
               }
@@ -4592,9 +6229,7 @@ async function sendPhoto(
     !file ||
     !currentUser
   ) {
-
     return;
-
   }
 
   if (
@@ -4611,9 +6246,7 @@ async function sendPhoto(
   }
 
   if (
-    !file.type.startsWith(
-      "image/"
-    )
+    !file.type.startsWith("image/")
   ) {
 
     alert(
@@ -4638,10 +6271,8 @@ async function sendPhoto(
   }
 
   if (imageButton) {
-
     imageButton.disabled =
       true;
-
   }
 
   if (uploadStatus) {
@@ -4679,10 +6310,8 @@ async function sendPhoto(
     }
 
     if (uploadStatus) {
-
       uploadStatus.textContent =
         "Sending photo...";
-
     }
 
     let conversationPath;
@@ -4785,10 +6414,8 @@ async function sendPhoto(
     );
 
     if (uploadStatus) {
-
       uploadStatus.style.display =
         "none";
-
     }
 
     alert(
@@ -4799,29 +6426,19 @@ async function sendPhoto(
   } finally {
 
     if (imageInput) {
-
       imageInput.value =
         "";
-
     }
 
     if (imageButton) {
-
       imageButton.disabled =
         false;
-
     }
 
   }
 
 }
 
-
-/*
-  ============================================================
-  PHOTO BUTTON
-  ============================================================
-*/
 
 if (imageButton) {
 
@@ -4842,23 +6459,13 @@ if (imageButton) {
 
       }
 
-      if (imageInput) {
-
-        imageInput.click();
-
-      }
+      imageInput?.click();
 
     }
   );
 
 }
 
-
-/*
-  ============================================================
-  PHOTO INPUT
-  ============================================================
-*/
 
 if (imageInput) {
 
@@ -4870,11 +6477,7 @@ if (imageInput) {
         event.target.files?.[0];
 
       if (file) {
-
-        sendPhoto(
-          file
-        );
-
+        sendPhoto(file);
       }
 
     }
@@ -4904,16 +6507,10 @@ if (refreshUsers) {
 
       try {
 
-        /*
-          Refresh users.
-        */
-
         const usersSnapshot =
           await db.ref(
             "users"
-          ).once(
-            "value"
-          );
+          ).once("value");
 
         const users = [];
 
@@ -4955,16 +6552,10 @@ if (refreshUsers) {
               )
           );
 
-        /*
-          Refresh groups.
-        */
-
         const groupsSnapshot =
           await db.ref(
             "groups"
-          ).once(
-            "value"
-          );
+          ).once("value");
 
         const groups = [];
 
@@ -5002,12 +6593,8 @@ if (refreshUsers) {
 
         groups.sort(
           (a, b) =>
-            (
-              b.createdAt || 0
-            ) -
-            (
-              a.createdAt || 0
-            )
+            (b.createdAt || 0) -
+            (a.createdAt || 0)
         );
 
         groupCache =
@@ -5202,14 +6789,6 @@ async function deleteAccount() {
     const email =
       user.email;
 
-    if (!email) {
-
-      throw new Error(
-        "Unable to determine your account email."
-      );
-
-    }
-
     const credential =
       firebase.auth.EmailAuthProvider.credential(
         email,
@@ -5237,9 +6816,7 @@ async function deleteAccount() {
     const groupsSnapshot =
       await db.ref(
         "groups"
-      ).once(
-        "value"
-      );
+      ).once("value");
 
     const updates = {};
 
@@ -5306,6 +6883,10 @@ async function deleteAccount() {
 
     stopPresenceListener();
 
+    setGroupHeaderClickable(
+      false
+    );
+
     showAuth();
 
     setError(
@@ -5320,18 +6901,14 @@ async function deleteAccount() {
       "login";
 
     if (nameGroup) {
-
       nameGroup.classList.add(
         "hidden"
       );
-
     }
 
     if (authButton) {
-
       authButton.textContent =
         "Sign in";
-
     }
 
     document
@@ -5417,6 +6994,14 @@ function resetChatInterface() {
   clearMessageListener();
   clearSelectedPresenceListener();
 
+  /*
+    Reset group header behavior.
+  */
+
+  setGroupHeaderClickable(
+    false
+  );
+
   if (chatUserName) {
 
     chatUserName.textContent =
@@ -5438,7 +7023,7 @@ function resetChatInterface() {
 
   if (chatUserAvatar) {
 
-    chatUserAvatar.textContent =
+    chatUserAvatar.innerHTML =
       "";
 
   }
@@ -5522,6 +7107,8 @@ async function startApp(
 
     createGroupInterface();
 
+    attachOwnProfileClick();
+
     showApplication();
 
     resetChatInterface();
@@ -5604,6 +7191,10 @@ auth.onAuthStateChanged(
 
       currentWorkspace =
         "chat";
+
+      setGroupHeaderClickable(
+        false
+      );
 
       if (userList) {
 
