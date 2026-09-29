@@ -2578,61 +2578,46 @@ body.dark-mode #groupDetailsContent strong {
   }
 
   .sidebar {
-
     width: 100%;
-
     flex: none;
-
-    min-height: auto;
-
-    max-height: 43vh;
-
+    height: 50vh;         /* Changed from max-height: 43vh to give more room for chats */
+    max-height: 50vh;
     border-right: 0;
-
     border-bottom: 1px solid rgba(255,255,255,.12);
   }
 
   .user-list {
-
     min-height: 100px;
-
-    max-height: 170px;
+    max-height: none;     /* Removed to allow it to fill the sidebar and scroll naturally */
   }
 
   .sidebar-actions {
-
-    display: grid;
-
-    grid-template-columns: repeat(3,1fr);
-
+    display: flex;        /* Changed to horizontal row to save vertical space */
+    flex-direction: row;
+    justify-content: space-around;
     gap: 3px;
+    padding: 4px 8px;
   }
 
   .sidebar-actions button {
-
     justify-content: center;
-
-    padding: 0 3px;
+    padding: 0 6px;
+    min-height: 32px;     /* Smaller buttons on mobile */
+    font-size: 0.65rem;
   }
 
   .chat-area {
-
-    min-height: 57vh;
-
-    height: 57vh;
+    min-height: 50vh;     /* Changed from 57vh to prevent covering the whole screen */
+    height: 50vh;
   }
 
   .chat-header {
-
     min-height: 65px;
-
     flex-basis: 65px;
-
     padding: 9px 13px;
   }
 
   .messages-box {
-
     padding: 15px 10px;
   }
 
@@ -2653,16 +2638,12 @@ body.dark-mode #groupDetailsContent strong {
   }
 
   #authCard {
-
     padding: 22px 16px;
-
     border-radius: 17px;
   }
 
   .auth-brand img {
-
     width: 49px;
-
     height: 49px;
   }
 
@@ -2671,22 +2652,18 @@ body.dark-mode #groupDetailsContent strong {
   }
 
   .sidebar {
-    max-height: 39vh;
+    height: 50vh;         /* Changed from max-height: 39vh */
+    max-height: 50vh;
   }
 
   .app-brand {
-
     min-height: 61px;
-
     padding: 10px 12px;
   }
 
   .app-brand img {
-
     width: 34px;
-
     height: 34px;
-
     flex-basis: 34px;
   }
 
@@ -2699,7 +2676,7 @@ body.dark-mode #groupDetailsContent strong {
   }
 
   .user-list {
-    max-height: 140px;
+    max-height: none;     /* Removed to allow scrolling */
   }
 
   #userList > *,
@@ -2709,35 +2686,24 @@ body.dark-mode #groupDetailsContent strong {
   #userList .user-list-item,
   #userList .group-item,
   #userList .group-list-item {
-
     min-height: 51px !important;
-
     padding: 6px 7px !important;
   }
 
   #userList .user-avatar,
   #userList .group-avatar {
-
     width: 35px !important;
-
     height: 35px !important;
-
     min-width: 35px !important;
-
     min-height: 35px !important;
-
     max-width: 35px !important;
-
     max-height: 35px !important;
-
     flex-basis: 35px !important;
   }
 
   .chat-area {
-
-    min-height: 61vh;
-
-    height: 61vh;
+    min-height: 50vh;     /* Changed from 61vh */
+    height: 50vh;
   }
 
   .message-content {
