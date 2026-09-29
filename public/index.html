@@ -71,7 +71,7 @@
   --input-bg: #ffffff;
 
   /* Messages */
-  --incoming-message: #ffffff;
+  --incoming-message: transparent; /* Changed from #ffffff to remove white background */
   --outgoing-message: #25d366;
 
   /* WhatsApp green */
@@ -125,7 +125,7 @@ body.dark-mode {
   --input-bg: #0a1b30;
 
   /* Messages */
-  --incoming-message: #ffffff;
+  --incoming-message: transparent; /* Changed from #ffffff to remove white background */
   --outgoing-message: #128c7e;
 
   /* No shadows on messages */
@@ -1558,10 +1558,8 @@ img {
 .message-row.other .message-bubble,
 .message-row.other .message {
 
-  background: #ffffff !important;
-
-  color: #202124 !important;
-
+  background: transparent !important; /* Changed from #ffffff to remove white background */
+  color: var(--text) !important;       /* Changed from #202124 to adapt to theme */
   border: none !important;
 
   box-shadow: none !important;
@@ -1572,8 +1570,7 @@ img {
 .message-row.other .message-bubble *,
 .message-row.other .message * {
 
-  color: #202124 !important;
-
+  color: var(--text) !important;       /* Changed from #202124 to adapt to theme */
   background: transparent !important;
 
   border: none !important;
@@ -2409,10 +2406,8 @@ body.dark-mode .message.incoming,
 body.dark-mode .incoming-message,
 body.dark-mode .message.received {
 
-  background: #ffffff !important;
-
-  color: #202124 !important;
-
+  background: transparent !important; /* Changed from #ffffff to remove white background */
+  color: var(--text) !important;       /* Changed from #202124 to adapt to theme */
   border: none !important;
 
   box-shadow: none !important;
@@ -2421,8 +2416,7 @@ body.dark-mode .message.received {
 body.dark-mode .message-row.other .message-bubble *,
 body.dark-mode .message-row.other .message * {
 
-  color: #202124 !important;
-
+  color: var(--text) !important;       /* Changed from #202124 to adapt to theme */
   background: transparent !important;
 
   border: none !important;
