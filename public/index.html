@@ -15,6 +15,11 @@
     content="#1f5eff"
   >
 
+  <meta
+    name="description"
+    content="Teams Chat - private real-time messaging for teams."
+  >
+
   <title>Teams Chat.</title>
 
   <link
@@ -23,1253 +28,2755 @@
     href="images/logo.png"
   >
 
-  <link
-    rel="stylesheet"
-    href="/style.css"
-  >
+ <style>
+
+/* ============================================================
+   TEAMSPACE — CLEAN LIGHT + DARK THEME
+   ============================================================ */
+
+:root {
+
+  /* Main colors */
+  --teams-blue: #464775;
+  --teams-blue-dark: #34355f;
+  --teams-blue-light: #6264a7;
+
+  /* Light page */
+  --page-bg: #f3f6fb;
+  --chat-bg: #edf4f8;
+
+  /* Sidebar */
+  --sidebar-bg: #464775;
+  --sidebar-bg-2: #34355f;
+  --sidebar-text: #ffffff;
+  --sidebar-muted: rgba(255,255,255,.72);
+  --sidebar-hover: rgba(255,255,255,.10);
+  --sidebar-active: rgba(255,255,255,.18);
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --surface-3: #e9edf2;
+
+  /* Borders */
+  --border: #dce2e8;
+  --border-light: #e8edf2;
+
+  /* Text */
+  --text: #202124;
+  --text-2: #30343b;
+  --muted: #737b86;
+
+  /* Inputs */
+  --input-bg: #ffffff;
+
+  /* Messages */
+  --incoming-message: #ffffff;
+  --outgoing-message: #25d366;
+
+  /* WhatsApp green */
+  --outgoing-message-dark: #128c7e;
+
+  /* Danger */
+  --danger: #dc2626;
+
+  /* NO MESSAGE SHADOW */
+  --message-shadow: none;
+
+  /* General shadow only for UI containers */
+  --shadow: none;
+}
 
 
-  <!-- =====================================================
-       RESPONSIVE / SCROLLING / PROFILE STYLES
-  ====================================================== -->
+/* ============================================================
+   DARK MODE
+   ============================================================ */
 
-  <style>
+body.dark-mode {
 
-    html,
-    body {
+  /* Dark navy page */
+  --page-bg: #071426;
+  --chat-bg: #081a30;
 
-      width: 100%;
-      min-height: 100%;
+  /* Dark blue sidebar */
+  --sidebar-bg: #25274a;
+  --sidebar-bg-2: #171a35;
 
-      margin: 0;
+  --sidebar-text: #ffffff;
+  --sidebar-muted: rgba(255,255,255,.70);
+  --sidebar-hover: rgba(98,100,167,.18);
+  --sidebar-active: rgba(98,100,167,.32);
 
-      overflow: hidden;
+  /* Dark surfaces */
+  --surface: #0d223d;
+  --surface-2: #102944;
+  --surface-3: #163454;
 
-    }
+  /* Dark borders */
+  --border: #21405f;
+  --border-light: #1b3652;
+
+  /* Dark text */
+  --text: #f3f7fc;
+  --text-2: #dce8f5;
+  --muted: #9eb2c8;
+
+  /* Dark inputs */
+  --input-bg: #0a1b30;
+
+  /* Messages */
+  --incoming-message: #ffffff;
+  --outgoing-message: #128c7e;
+
+  /* No shadows on messages */
+  --message-shadow: none;
+
+  --shadow: none;
+}
 
 
-    *,
-    *::before,
-    *::after {
+/* ============================================================
+   GLOBAL
+   ============================================================ */
 
-      box-sizing: border-box;
+* {
+  box-sizing: border-box;
+}
 
-    }
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
 
-    ```css
-/* =====================================================
-   LANDING PAGE BRAND
-====================================================== */
+html {
+  background: var(--page-bg);
+  color-scheme: light;
+}
 
-.landing-brand-text {
+html.teamspace-dark {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  margin: 0;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  background: var(--page-bg);
+  color: var(--text);
+
+  -webkit-font-smoothing: antialiased;
+
+  transition:
+    background-color .2s ease,
+    color .2s ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+}
+
+.hidden {
+  display: none !important;
+}
+
+
+/* ============================================================
+   AUTH SCREEN
+   ============================================================ */
+
+#authScreen {
+
+  position: relative;
+
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 25px 15px;
+
+  overflow: auto;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--page-bg),
+      var(--chat-bg)
+    );
+}
+
+.auth-container {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+  max-width: 450px;
+
+  margin: auto;
+}
+
+.auth-brand {
 
   display: flex;
 
   flex-direction: column;
 
-  align-items: flex-start;
+  align-items: center;
 
-  line-height: 1.1;
+  text-align: center;
 
+  margin-bottom: 18px;
 }
 
+.auth-brand img {
 
-/* TEAMS CHAT */
+  width: 56px;
+  height: 56px;
 
-.landing-teams-chat {
+  object-fit: contain;
 
-  display: block;
+  border-radius: 14px;
 
-  color: #ffffff;
+  margin-bottom: 9px;
 
-  font-size: 30px;
-
-  font-weight: 900;
-
-  letter-spacing: -0.5px;
-
+  box-shadow: none;
 }
 
+.auth-brand-name {
 
-/* CONNECT CHAT */
+  color: var(--text);
 
-.landing-connect-chat {
+  font-size: 1.45rem;
 
-  display: block;
+  font-weight: 850;
+
+  letter-spacing: -.045em;
+}
+
+.auth-brand-subtitle {
 
   margin-top: 4px;
 
+  color: var(--muted);
+
+  font-size: .70rem;
+}
+
+
+/* ============================================================
+   AUTH CARD
+   ============================================================ */
+
+#authCard {
+
+  width: 100%;
+
+  padding: 30px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 21px;
+
+  background: var(--surface);
+
+  box-shadow: none;
+}
+
+.auth-heading {
+  margin-bottom: 20px;
+}
+
+.auth-heading h1 {
+
+  margin: 0 0 6px;
+
+  color: var(--text);
+
+  font-size: 1.75rem;
+
+  font-weight: 800;
+
+  letter-spacing: -.04em;
+}
+
+.auth-heading p {
+
+  margin: 0;
+
+  color: var(--muted);
+
+  font-size: .79rem;
+
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   AUTH TABS
+   ============================================================ */
+
+.auth-tabs {
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 4px;
+
+  padding: 4px;
+
+  margin-bottom: 20px;
+
+  border-radius: 10px;
+
+  background: var(--surface-3);
+}
+
+.auth-tab,
+.tab {
+
+  min-height: 40px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: var(--muted);
+
+  font-size: .75rem;
+
+  font-weight: 750;
+}
+
+.auth-tab.active,
+.tab.active {
+
+  background: var(--surface);
+
+  color: var(--teams-blue);
+
+  box-shadow: none;
+}
+
+
+/* ============================================================
+   AUTH FORM
+   ============================================================ */
+
+#authForm {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 13px;
+}
+
+.form-group {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.form-group label {
+
+  color: var(--text-2);
+
+  font-size: .71rem;
+
+  font-weight: 750;
+}
+
+.form-group input {
+
+  width: 100%;
+
+  min-height: 48px;
+
+  padding: 0 13px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  outline: none;
+
+  background: var(--input-bg);
+
+  color: var(--text);
+
+  font-size: .81rem;
+}
+
+.form-group input::placeholder {
+  color: var(--muted);
+}
+
+.form-group input:focus {
+  border-color: var(--teams-blue);
+  box-shadow: none;
+}
+
+#authError {
+
+  min-height: 16px;
+
+  color: var(--danger);
+
+  font-size: .70rem;
+
+  line-height: 1.4;
+}
+
+#authButton {
+
+  width: 100%;
+
+  min-height: 49px;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  background: var(--teams-blue);
+
   color: #ffffff;
 
-  font-size: 16px;
+  font-size: .82rem;
+
+  font-weight: 800;
+
+  box-shadow: none;
+}
+
+#authButton:hover {
+  background: var(--teams-blue-dark);
+}
+
+.auth-footer {
+
+  margin-top: 17px;
+
+  padding-top: 13px;
+
+  border-top: 1px solid var(--border-light);
+
+  text-align: center;
+
+  color: var(--muted);
+
+  font-size: .62rem;
+
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   APPLICATION
+   ============================================================ */
+
+#appScreen {
+
+  width: 100%;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  background: var(--page-bg);
+}
+
+.app-shell {
+
+  width: 100%;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  display: flex;
+
+  overflow: hidden;
+}
+
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.sidebar {
+
+  width: 305px;
+
+  flex: 0 0 305px;
+
+  min-height: 100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      180deg,
+      var(--sidebar-bg),
+      var(--sidebar-bg-2)
+    );
+
+  border-right: 1px solid rgba(255,255,255,.10);
+
+  color: var(--sidebar-text);
+}
+
+
+/* ============================================================
+   APP BRAND
+   ============================================================ */
+
+.app-brand {
+
+  min-height: 72px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 13px 16px;
+
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+
+.app-brand img {
+
+  width: 40px;
+
+  height: 40px;
+
+  flex: 0 0 40px;
+
+  object-fit: contain;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.app-brand strong {
+
+  display: block;
+
+  color: #ffffff;
+
+  font-size: .95rem;
+
+  font-weight: 850;
+}
+
+.app-brand span {
+
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--sidebar-muted);
+
+  font-size: .65rem;
+}
+
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+
+.profile-card {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin: 10px;
+
+  padding: 9px;
+
+  border: 1px solid rgba(255,255,255,.10);
+
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.07);
+
+  cursor: pointer;
+}
+
+.profile-card:hover {
+  background: rgba(255,255,255,.12);
+}
+
+.profile-avatar,
+.chat-header-avatar,
+.user-avatar {
+
+  width: 42px;
+
+  height: 42px;
+
+  min-width: 42px;
+
+  min-height: 42px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  flex: 0 0 42px;
+
+  overflow: hidden;
+
+  border-radius: 50%;
+
+  background: rgba(255,255,255,.18);
+
+  color: #ffffff;
+
+  font-size: .70rem;
+
+  font-weight: 800;
+}
+
+.profile-avatar img,
+.chat-header-avatar img,
+.user-avatar img {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.profile-details {
+
+  min-width: 0;
+
+  flex: 1;
+
+  overflow: hidden;
+}
+
+.profile-details strong {
+
+  display: block;
+
+  overflow: hidden;
+
+  color: #ffffff;
+
+  font-size: .79rem;
+
+  font-weight: 750;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.profile-details span {
+
+  display: block;
+
+  margin-top: 3px;
+
+  overflow: hidden;
+
+  color: var(--sidebar-muted);
+
+  font-size: .62rem;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.workspace-nav {
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 4px;
+
+  padding: 0 10px 10px;
+}
+
+.workspace-nav-button,
+.nav-item {
+
+  min-height: 40px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 5px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: var(--sidebar-muted);
+
+  font-size: .69rem;
+
+  font-weight: 700;
+}
+
+.workspace-nav-button:hover,
+.nav-item:hover {
+
+  background: var(--sidebar-hover);
+
+  color: #ffffff;
+}
+
+.workspace-nav-button.active,
+.nav-item.active {
+
+  background: var(--sidebar-active);
+
+  color: #ffffff;
+
+  box-shadow: none;
+}
+
+
+/* ============================================================
+   SIDEBAR LIST HEADER
+   ============================================================ */
+
+.sidebar-list-header {
+
+  min-height: 48px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 0 13px;
+
+  border-top: 1px solid rgba(255,255,255,.08);
+
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.sidebar-list-header h2 {
+
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: .76rem;
+
+  font-weight: 800;
+}
+
+.sidebar-list-header button {
+
+  width: 30px;
+
+  height: 30px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background: rgba(255,255,255,.10);
+
+  color: #ffffff;
+}
+
+.sidebar-list-header button:hover {
+  background: rgba(255,255,255,.18);
+}
+
+
+/* ============================================================
+   USER LIST
+   ============================================================ */
+
+.user-list {
+
+  flex: 1;
+
+  min-height: 0;
+
+  overflow-x: hidden;
+
+  overflow-y: auto;
+
+  padding: 6px;
+}
+
+.user-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.user-list::-webkit-scrollbar-thumb {
+
+  background: rgba(255,255,255,.20);
+
+  border-radius: 20px;
+}
+
+
+/* ============================================================
+   USER / CHAT / GROUP ITEMS
+   ============================================================ */
+
+#userList > *,
+#userList button,
+#userList .user-item,
+#userList .chat-item,
+#userList .user-list-item,
+#userList .group-item,
+#userList .group-list-item {
+
+  width: 100% !important;
+
+  min-height: 54px !important;
+
+  height: auto !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 9px !important;
+
+  margin: 2px 0 !important;
+
+  padding: 7px 8px !important;
+
+  border: 0 !important;
+
+  border-radius: 10px !important;
+
+  background: transparent !important;
+
+  color: #ffffff !important;
+
+  box-shadow: none !important;
+
+  text-align: left !important;
+
+  font-size: .77rem !important;
+
+  line-height: 1.2 !important;
+
+  overflow: hidden !important;
+}
+
+#userList > *:hover,
+#userList button:hover,
+#userList .user-item:hover,
+#userList .chat-item:hover,
+#userList .user-list-item:hover,
+#userList .group-item:hover,
+#userList .group-list-item:hover {
+
+  background: var(--sidebar-hover) !important;
+}
+
+#userList > *.selected,
+#userList > *.active,
+#userList button.selected,
+#userList button.active,
+#userList .user-item.selected,
+#userList .chat-item.selected,
+#userList .user-list-item.selected,
+#userList .group-item.selected,
+#userList .group-list-item.selected {
+
+  background: var(--sidebar-active) !important;
+
+  box-shadow:
+    inset 3px 0 0 #ffffff !important;
+}
+
+
+/* ============================================================
+   USER LIST TEXT
+   ============================================================ */
+
+#userList strong,
+#userList b,
+#userList h1,
+#userList h2,
+#userList h3,
+#userList h4,
+#userList h5,
+#userList h6 {
+
+  display: block !important;
+
+  width: 100% !important;
+
+  max-width: 100% !important;
+
+  min-width: 0 !important;
+
+  margin: 0 !important;
+
+  padding: 0 !important;
+
+  color: #ffffff !important;
+
+  font-size: .76rem !important;
+
+  font-weight: 700 !important;
+
+  line-height: 1.2 !important;
+
+  white-space: nowrap !important;
+
+  overflow: hidden !important;
+
+  text-overflow: ellipsis !important;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+}
+
+#userList p {
+
+  display: block !important;
+
+  width: 100% !important;
+
+  max-width: 100% !important;
+
+  margin: 2px 0 0 !important;
+
+  padding: 0 !important;
+
+  color: rgba(255,255,255,.58) !important;
+
+  font-size: .61rem !important;
+
+  line-height: 1.2 !important;
+
+  white-space: nowrap !important;
+
+  overflow: hidden !important;
+
+  text-overflow: ellipsis !important;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+}
+
+#userList span {
+
+  max-width: 100%;
+
+  color: inherit;
+
+  font-size: .69rem !important;
+
+  line-height: 1.2 !important;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+}
+
+
+/* ============================================================
+   USER DETAILS WRAPPERS
+   ============================================================ */
+
+#userList .user-info,
+#userList .user-item-details,
+#userList .chat-item-details,
+#userList .user-list-item-details,
+#userList .group-item-details,
+#userList .group-list-item-details {
+
+  min-width: 0 !important;
+
+  width: 0 !important;
+
+  flex: 1 1 auto !important;
+
+  overflow: hidden !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  justify-content: center !important;
+
+  gap: 2px !important;
+
+  background: transparent !important;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+
+  padding: 0 !important;
+}
+
+
+/* ============================================================
+   AVATARS
+   ============================================================ */
+
+#userList .user-avatar,
+#userList .group-avatar {
+
+  width: 38px !important;
+
+  height: 38px !important;
+
+  min-width: 38px !important;
+
+  min-height: 38px !important;
+
+  max-width: 38px !important;
+
+  max-height: 38px !important;
+
+  flex: 0 0 38px !important;
+
+  border-radius: 50% !important;
+
+  background: rgba(255,255,255,.18) !important;
+
+  color: #ffffff !important;
+
+  font-size: .66rem !important;
+}
+
+#userList .group-avatar {
+  border-radius: 10px !important;
+}
+
+
+/* ============================================================
+   PRESENCE
+   ============================================================ */
+
+#userList .presence-dot {
+
+  width: 7px !important;
+
+  height: 7px !important;
+
+  min-width: 7px !important;
+
+  min-height: 7px !important;
+
+  max-width: 7px !important;
+
+  max-height: 7px !important;
+
+  flex: 0 0 7px !important;
+
+  border-radius: 50% !important;
+
+  background: rgba(255,255,255,.40) !important;
+
+  box-shadow: none !important;
+}
+
+#userList .presence-dot.online {
+
+  background: #3ee58c !important;
+
+  box-shadow: none !important;
+}
+
+
+/* ============================================================
+   SIDEBAR ACTIONS
+   ============================================================ */
+
+.sidebar-actions {
+
+  padding: 8px 10px 10px;
+
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.sidebar-actions button {
+
+  width: 100%;
+
+  min-height: 37px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 9px;
+
+  margin: 2px 0;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: var(--sidebar-muted);
+
+  font-size: .68rem;
+
+  font-weight: 650;
+
+  text-align: left;
+
+  box-shadow: none;
+}
+
+.sidebar-actions button:hover {
+
+  background: var(--sidebar-hover);
+
+  color: #ffffff;
+}
+
+.sidebar-actions .danger-action:hover {
+
+  background: rgba(255,70,85,.16);
+
+  color: #ffd5da;
+}
+
+
+/* ============================================================
+   CHAT AREA
+   ============================================================ */
+
+.chat-area {
+
+  flex: 1;
+
+  min-width: 0;
+
+  min-height: 100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  background: var(--chat-bg);
+
+  color: var(--text);
+}
+
+
+/* ============================================================
+   CHAT HEADER
+   ============================================================ */
+
+.chat-header {
+
+  min-height: 72px;
+
+  flex: 0 0 72px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 10px 20px;
+
+  border-bottom: 1px solid var(--border);
+
+  background: var(--surface);
+
+  box-shadow: none;
+}
+
+.chat-header-avatar {
+
+  width: 43px;
+
+  height: 43px;
+
+  min-width: 43px;
+
+  min-height: 43px;
+
+  flex: 0 0 43px;
+
+  background: var(--teams-blue);
+
+  color: #ffffff;
+}
+
+.chat-header-details {
+
+  min-width: 0;
+
+  overflow: hidden;
+}
+
+.chat-header-details h1 {
+
+  margin: 0;
+
+  overflow: hidden;
+
+  color: var(--text);
+
+  font-size: .94rem;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+}
+
+.chat-header-details p {
+
+  margin: 3px 0 0;
+
+  color: var(--muted);
+
+  font-size: .66rem;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+}
+
+
+/* ============================================================
+   MESSAGES AREA
+   ============================================================ */
+
+.messages-box {
+
+  position: relative;
+
+  flex: 1;
+
+  min-height: 0;
+
+  overflow-y: auto;
+
+  padding: 25px clamp(12px,4vw,50px);
+
+  background: var(--chat-bg);
+}
+
+.messages-box::before {
+
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  opacity: .30;
+
+  background-image:
+    linear-gradient(
+      rgba(98,100,167,.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(98,100,167,.025) 1px,
+      transparent 1px
+    );
+
+  background-size: 32px 32px;
+}
+
+.messages-box > * {
+
+  position: relative;
+
+  z-index: 1;
+}
+
+
+/* ============================================================
+   WELCOME
+   ============================================================ */
+
+.chat-welcome,
+.empty-chat {
+
+  width: min(520px,100%);
+
+  margin: 10vh auto 0;
+
+  padding: 30px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 20px;
+
+  background: var(--surface);
+
+  text-align: center;
+
+  box-shadow: none;
+}
+
+.chat-welcome-icon {
+
+  width: 60px;
+
+  height: 60px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  margin: 0 auto 15px;
+
+  border-radius: 18px;
+
+  background: rgba(98,100,167,.12);
+
+  color: var(--teams-blue-light);
+
+  font-size: 1.5rem;
+}
+
+.chat-welcome h2,
+.empty-chat h2 {
+
+  margin: 0 0 7px;
+
+  color: var(--text);
+
+  font-size: 1.15rem;
+
+  font-weight: 800;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+}
+
+.chat-welcome p,
+.empty-chat {
+
+  color: var(--muted);
+
+  font-size: .76rem;
+
+  line-height: 1.6;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+}
+
+
+/* ============================================================
+   MESSAGE ROW
+   ============================================================ */
+
+.message-row {
+
+  width: 100%;
+
+  display: flex;
+
+  margin-bottom: 12px;
+}
+
+.message-row.own,
+.message-row.mine {
+
+  justify-content: flex-end;
+}
+
+.message-row.other {
+
+  justify-content: flex-start;
+}
+
+.message-content {
+
+  max-width: min(72%,680px);
+
+  background: transparent !important;
+
+  border: none !important;
+
+  box-shadow: none !important;
+}
+
+
+/* ============================================================
+   MESSAGE SENDER
+   ============================================================ */
+
+.message-sender {
+
+  margin: 0 0 4px 5px;
+
+  color: var(--muted);
+
+  font-size: .62rem;
 
   font-weight: 700;
 
-  letter-spacing: 0.2px;
+  background: transparent !important;
 
+  border: none !important;
+
+  box-shadow: none !important;
 }
 
 
-/* MOBILE */
+/* ============================================================
+   MESSAGE BUBBLES
+   ============================================================ */
 
-@media (max-width: 480px) {
+/*
+   IMPORTANT:
+   No box shadows.
+   No rectangular white wrapper around text.
+*/
 
-  .landing-teams-chat {
+.message-bubble,
+.message {
 
-    font-size: 26px;
+  position: relative;
 
-  }
+  padding: 9px 12px;
 
+  border-radius: 14px;
 
-  .landing-connect-chat {
+  background: var(--incoming-message);
 
-    font-size: 15px;
+  color: #222222;
 
-  }
+  font-size: .81rem;
 
+  line-height: 1.5;
+
+  word-break: break-word;
+
+  border: none !important;
+
+  box-shadow: none !important;
 }
 
 
+/* ============================================================
+   INCOMING MESSAGE
+   ============================================================ */
 
+.message-row.other .message-bubble,
+.message-row.other .message {
 
-    /* =====================================================
-       APPLICATION LAYOUT
-    ====================================================== */
+  background: #ffffff !important;
 
-    .app {
+  color: #202124 !important;
 
-      width: 100%;
+  border: none !important;
 
-      min-height: 100dvh;
-      height: 100dvh;
+  box-shadow: none !important;
 
-      overflow: hidden;
+  border-bottom-left-radius: 5px;
+}
 
-    }
+.message-row.other .message-bubble *,
+.message-row.other .message * {
 
+  color: #202124 !important;
 
-    .sidebar {
+  background: transparent !important;
 
-      min-width: 0;
-      min-height: 0;
+  border: none !important;
 
-      height: 100%;
+  box-shadow: none !important;
+}
 
-      overflow: hidden;
 
-    }
+/* ============================================================
+   OUTGOING MESSAGE — WHATSAPP GREEN
+   ============================================================ */
 
+.message-row.own .message-bubble,
+.message-row.mine .message {
 
-    .chat-area {
+  background: var(--outgoing-message) !important;
 
-      min-width: 0;
-      min-height: 0;
+  color: #ffffff !important;
 
-      width: 100%;
-      height: 100%;
+  border: none !important;
 
-      display: flex;
+  box-shadow: none !important;
 
-      flex-direction: column;
+  border-bottom-right-radius: 5px;
 
-      overflow: hidden;
+  padding-right: 38px;
+}
 
-    }
+.message-row.own .message-bubble *,
+.message-row.mine .message * {
 
+  color: #ffffff !important;
 
-    .chat-header,
-    .composer {
+  background: transparent !important;
 
-      flex: 0 0 auto;
+  border: none !important;
 
-    }
+  box-shadow: none !important;
+}
 
 
-    /* =====================================================
-       SIDEBAR SCROLLING
-    ====================================================== */
+/* ============================================================
+   WHATSAPP-STYLE DOUBLE TICKS
+   ============================================================ */
 
-    .contacts-section {
+.message-row.own .message-bubble::after,
+.message-row.mine .message::after {
 
-      min-height: 0 !important;
+  content: "✓✓";
 
-      display: flex !important;
+  position: absolute;
 
-      flex-direction: column !important;
+  right: 9px;
 
-      overflow: hidden !important;
+  bottom: 5px;
 
-    }
+  color: rgba(255,255,255,.95);
 
+  font-size: .66rem;
 
-    #userList {
+  font-weight: 700;
 
-      min-height: 0;
+  letter-spacing: -2px;
 
-      flex: 1 1 auto;
+  line-height: 1;
 
-      overflow-y: auto;
+  background: transparent !important;
 
-      overflow-x: hidden;
+  border: none !important;
 
-      -webkit-overflow-scrolling: touch;
+  box-shadow: none !important;
+}
 
-      overscroll-behavior: contain;
 
-      scrollbar-width: thin;
+/* ============================================================
+   MESSAGE TEXT — REMOVE ALL RECTANGLES
+   ============================================================ */
 
-      padding-right: 2px;
+.message-text,
+.message-content,
+.message-body,
+.chat-message-text {
 
-    }
+  background: transparent !important;
 
+  border: none !important;
 
-    /* =====================================================
-       MESSAGE SCROLLING
-    ====================================================== */
+  box-shadow: none !important;
 
-    #messages {
+  outline: none !important;
+}
 
-      min-height: 0;
 
-      flex: 1 1 auto;
+/*
+   Do not give paragraphs/spans inside messages
+   their own white background.
+*/
 
-      overflow-y: auto;
+.message-bubble p,
+.message-bubble span,
+.message-bubble strong,
+.message p,
+.message span,
+.message strong {
 
-      overflow-x: hidden;
+  background: transparent !important;
 
-      -webkit-overflow-scrolling: touch;
+  border: none !important;
 
-      overscroll-behavior: contain;
+  box-shadow: none !important;
 
-      scrollbar-width: thin;
+  outline: none !important;
+}
 
-    }
 
+/* ============================================================
+   MESSAGE TIME
+   ============================================================ */
 
-    #userList::-webkit-scrollbar,
-    #messages::-webkit-scrollbar {
+.message-time {
 
-      width: 7px;
+  margin-top: 3px;
 
-    }
+  color: var(--muted);
 
+  font-size: .58rem;
 
-    #userList::-webkit-scrollbar-thumb,
-    #messages::-webkit-scrollbar-thumb {
+  background: transparent !important;
 
-      background: rgba(100,116,139,.45);
+  border: none !important;
 
-      border-radius: 10px;
+  box-shadow: none !important;
+}
 
-    }
+.message-row.own .message-time,
+.message-row.mine .message-time {
 
+  text-align: right;
+}
 
-    #userList::-webkit-scrollbar-track,
-    #messages::-webkit-scrollbar-track {
 
-      background: transparent;
+/* ============================================================
+   MESSAGE IMAGE
+   ============================================================ */
 
-    }
+.message-image {
 
+  display: block;
 
-    /* =====================================================
-       USER LIST
-    ====================================================== */
+  max-width: min(360px,100%);
 
-    .user-item {
+  max-height: 420px;
 
-      position: relative;
+  border-radius: 11px;
 
-      min-width: 0;
+  object-fit: contain;
 
-    }
+  cursor: pointer;
 
+  box-shadow: none !important;
+}
 
-    .user-info {
 
-      min-width: 0;
+/* ============================================================
+   COMPOSER
+   ============================================================ */
 
-      flex: 1;
+.message-form,
+.composer {
 
-    }
+  min-height: 70px;
 
+  display: flex;
 
-    .user-info strong,
-    .user-info span,
-    .user-info small {
+  align-items: center;
 
-      display: block;
+  gap: 8px;
 
-      max-width: 100%;
+  padding: 10px clamp(10px,3vw,25px);
 
-      overflow: hidden;
+  border-top: 1px solid var(--border);
 
-      text-overflow: ellipsis;
+  background: var(--surface);
+}
 
-      white-space: nowrap;
+.message-form input[type="text"] {
 
-    }
+  flex: 1;
 
+  min-width: 0;
 
-    /* =====================================================
-       WORKSPACE NAVIGATION
-    ====================================================== */
+  height: 45px;
 
-    .workspace-nav {
+  padding: 0 13px;
 
-      display: flex;
+  border: 1px solid var(--border);
 
-      flex-direction: column;
+  border-radius: 11px;
 
-      gap: 4px;
+  outline: none;
 
-    }
+  background: var(--input-bg);
 
+  color: var(--text);
 
-    /* =====================================================
-       CREATE GROUP BUTTON
-    ====================================================== */
+  font-size: .81rem;
 
-    .teamspace-group-button {
+  box-shadow: none;
+}
 
-      width: 100%;
+.message-form input[type="text"]::placeholder {
+  color: var(--muted);
+}
 
-      margin: 0 0 10px;
+.message-form input[type="text"]:focus {
 
-      padding: 10px 14px;
+  border-color: var(--teams-blue);
 
-      border: 0;
+  box-shadow: none;
+}
 
-      border-radius: 8px;
+.composer-button,
+.send-button,
+.image-button {
 
-      cursor: pointer;
+  width: 43px;
 
-      font-weight: 600;
+  height: 43px;
 
-      background: #1f5eff;
+  min-width: 43px;
 
-      color: #fff;
+  min-height: 43px;
 
-      transition:
-        opacity .2s ease,
-        transform .2s ease;
+  flex: 0 0 43px;
 
-    }
+  display: flex;
 
+  align-items: center;
 
-    .teamspace-group-button:hover {
+  justify-content: center;
 
-      opacity: .92;
+  border: 0;
 
-    }
+  border-radius: 11px;
 
+  box-shadow: none;
+}
 
-    .teamspace-group-button:active {
+.composer-button,
+.image-button {
 
-      transform: scale(.98);
+  background: var(--surface-3);
 
-    }
+  color: var(--muted);
+}
 
+.composer-button:hover,
+.image-button:hover {
 
-    /* =====================================================
-       GROUP PROFILE BUTTON
-    ====================================================== */
+  background: var(--active);
 
-    .user-profile-button {
+  color: var(--teams-blue-light);
+}
 
-      flex-shrink: 0;
+.send-button {
 
-      width: 34px;
-      height: 34px;
+  background: var(--teams-blue-light);
 
-      display: flex;
+  color: #ffffff;
 
-      align-items: center;
+  box-shadow: none;
+}
 
-      justify-content: center;
+.send-button:hover {
 
-      border: 0;
+  background: var(--teams-blue);
 
-      border-radius: 50%;
+  transform: none;
+}
 
-      background: transparent;
+.upload-status {
 
-      color: inherit;
+  padding: 0 20px;
 
-      cursor: pointer;
+  color: var(--teams-blue-light);
 
-      font-size: 18px;
+  background: var(--surface);
 
-    }
+  font-size: .66rem;
 
+  box-shadow: none;
+}
 
-    .user-profile-button:hover {
 
-      background: rgba(127,127,127,.15);
+/* ============================================================
+   GROUP DETAILS
+   ============================================================ */
 
-    }
+.group-members-list {
 
+  max-height: 300px;
 
-    /* =====================================================
-       PROFILE MODALS
-    ====================================================== */
+  overflow-y: auto;
 
-    .profile-modal {
+  display: flex;
 
-      position: fixed;
+  flex-direction: column;
 
-      inset: 0;
+  gap: 7px;
 
-      z-index: 9999;
+  padding: 2px 0;
+}
 
-      display: flex;
+.group-member,
+.teamspace-member {
 
-      align-items: center;
+  display: flex;
 
-      justify-content: center;
+  align-items: center;
 
-      padding: 20px;
+  gap: 9px;
 
-      background: rgba(0,0,0,.55);
+  min-width: 0;
 
-      backdrop-filter: blur(5px);
+  padding: 9px;
 
-      -webkit-backdrop-filter: blur(5px);
+  border: 1px solid var(--border-light);
 
-    }
+  border-radius: 10px;
 
+  background: var(--surface-2);
 
-    .profile-modal.hidden {
+  color: var(--text);
 
-      display: none;
+  box-shadow: none;
+}
 
-    }
+.group-member-avatar,
+.teamspace-small-avatar {
 
+  width: 38px;
 
-    .profile-modal-card {
+  height: 38px;
 
-      position: relative;
+  min-width: 38px;
 
-      width: min(430px, 100%);
+  min-height: 38px;
 
-      max-height: min(700px, 90vh);
+  flex: 0 0 38px;
 
-      overflow-y: auto;
+  display: flex;
 
-      padding: 28px;
+  align-items: center;
 
-      border-radius: 18px;
+  justify-content: center;
 
-      background: var(--card-bg, #ffffff);
+  overflow: hidden;
 
-      color: var(--text-color, #111827);
+  border-radius: 50%;
 
-      box-shadow:
-        0 25px 70px rgba(0,0,0,.25);
+  background: var(--teams-blue);
 
-      scrollbar-width: thin;
+  color: #ffffff;
 
-    }
+  font-size: .67rem;
 
+  font-weight: 800;
+}
 
-    .profile-modal-card::-webkit-scrollbar {
+.group-member-avatar img,
+.teamspace-small-avatar img {
 
-      width: 6px;
+  width: 100%;
 
-    }
+  height: 100%;
 
+  object-fit: cover;
+}
 
-    .profile-modal-card::-webkit-scrollbar-thumb {
+.group-member-info,
+.teamspace-member-info {
 
-      background: rgba(100,116,139,.45);
+  min-width: 0;
 
-      border-radius: 10px;
+  flex: 1;
 
-    }
+  overflow: hidden;
+}
 
+.group-member-name,
+.teamspace-member-info strong {
 
-    .profile-modal-close {
+  display: block;
 
-      position: absolute;
+  overflow: hidden;
 
-      top: 12px;
-      right: 14px;
+  color: var(--text);
 
-      width: 36px;
-      height: 36px;
+  font-size: .76rem;
 
-      display: flex;
+  font-weight: 700;
 
-      align-items: center;
+  white-space: nowrap;
 
-      justify-content: center;
+  text-overflow: ellipsis;
 
-      border: 0;
+  background: transparent !important;
 
-      border-radius: 50%;
+  border: none !important;
 
-      background: transparent;
+  box-shadow: none !important;
+}
 
-      color: inherit;
+.group-member-email,
+.teamspace-member-info span {
 
-      font-size: 28px;
+  display: block;
 
-      line-height: 1;
+  margin-top: 2px;
 
-      cursor: pointer;
+  overflow: hidden;
 
-    }
+  color: var(--muted);
 
+  font-size: .62rem;
 
-    .profile-modal-close:hover {
+  white-space: nowrap;
 
-      background: rgba(127,127,127,.15);
+  text-overflow: ellipsis;
 
-    }
+  background: transparent !important;
 
+  border: none !important;
 
-    .profile-modal-avatar {
+  box-shadow: none !important;
+}
 
-      width: 82px;
-      height: 82px;
 
-      margin: 5px auto 15px;
+/* ============================================================
+   GROUP ADMIN BADGE
+   ============================================================ */
 
-      display: flex;
+.group-admin-badge {
 
-      align-items: center;
+  display: inline-flex;
 
-      justify-content: center;
+  align-items: center;
 
-      border-radius: 50%;
+  justify-content: center;
 
-      background:
-        linear-gradient(
-          135deg,
-          #2563eb,
-          #d4a017
-        );
+  flex-shrink: 0;
 
-      color: #ffffff;
+  padding: 4px 8px;
 
-      font-size: 28px;
+  border-radius: 999px;
 
-      font-weight: 700;
+  background: rgba(245,183,63,.18);
 
-    }
+  color: #a97900;
 
+  font-size: .61rem;
 
-    .group-avatar {
+  font-weight: 800;
 
-      font-size: 32px;
+  white-space: nowrap;
 
-    }
+  box-shadow: none !important;
+}
 
+body.dark-mode .group-admin-badge {
 
-    .profile-modal-card h2 {
+  background: rgba(245,183,63,.15);
 
-      margin: 0;
+  color: #f3c75f;
+}
 
-      text-align: center;
 
-      font-size: 22px;
+/* ============================================================
+   REMOVE MEMBER
+   ============================================================ */
 
-    }
+.group-member-remove {
 
+  flex-shrink: 0;
 
-    .profile-modal-subtitle {
+  padding: 6px 8px;
 
-      margin: 7px 0 20px;
+  border: 0;
 
-      text-align: center;
+  border-radius: 7px;
 
-      opacity: .7;
+  background: rgba(220,38,38,.10);
 
-    }
+  color: #dc2626;
 
+  font-size: .61rem;
 
-    /* =====================================================
-       PROFILE FORM
-    ====================================================== */
+  font-weight: 700;
 
-    .profile-field {
+  box-shadow: none;
+}
 
-      margin-bottom: 16px;
+.group-member-remove:hover {
 
-    }
+  background: rgba(220,38,38,.18);
+}
 
+.group-member-remove:disabled {
 
-    .profile-field label {
+  opacity: .45;
 
-      display: block;
+  cursor: not-allowed;
+}
 
-      margin-bottom: 7px;
 
-      font-size: 13px;
+/* ============================================================
+   LEAVE GROUP
+   ============================================================ */
 
-      font-weight: 600;
+.group-profile-actions {
 
-      opacity: .75;
+  margin-top: 18px;
 
-    }
+  padding-top: 15px;
 
+  border-top: 1px solid var(--border-light);
+}
 
-    .profile-field input {
+.danger-profile-btn {
 
-      width: 100%;
+  width: 100%;
 
-      box-sizing: border-box;
+  min-height: 40px;
 
-      padding: 11px 13px;
+  padding: 0 12px;
 
-      border:
-        1px solid
-        rgba(127,127,127,.3);
+  border: 0;
 
-      border-radius: 9px;
+  border-radius: 9px;
 
-      background: transparent;
+  background: #dc2626;
 
-      color: inherit;
+  color: #ffffff;
 
-      outline: none;
+  font-size: .73rem;
 
-    }
+  font-weight: 750;
 
+  box-shadow: none;
+}
 
-    .profile-field input:focus {
+.danger-profile-btn:hover {
+  background: #b91c1c;
+}
 
-      border-color: #2563eb;
 
-    }
+/* ============================================================
+   MODALS
+   ============================================================ */
 
+.teamspace-modal-overlay {
 
-    .profile-save-btn {
+  position: fixed;
 
-      width: 100%;
+  z-index: 9999;
 
-      padding: 11px 15px;
+  inset: 0;
 
-      border: 0;
+  display: flex;
 
-      border-radius: 9px;
+  align-items: center;
 
-      background: #2563eb;
+  justify-content: center;
 
-      color: #ffffff;
+  padding: 16px;
 
-      font-weight: 600;
+  background: rgba(5,10,20,.60);
 
-      cursor: pointer;
+  backdrop-filter: blur(5px);
+}
 
-    }
+.teamspace-modal {
 
+  width: min(520px,100%);
 
-    .profile-save-btn:hover {
+  max-height: 90vh;
 
-      opacity: .9;
+  overflow-y: auto;
 
-    }
+  padding: 23px;
 
+  border: 1px solid var(--border);
 
-    .profile-save-btn:disabled {
+  border-radius: 19px;
 
-      opacity: .6;
+  background: var(--surface);
 
-      cursor: not-allowed;
+  color: var(--text);
 
-    }
+  box-shadow: none;
+}
 
+.teamspace-modal h2 {
 
-    .profile-message {
+  color: var(--text);
 
-      margin-top: 10px;
+  box-shadow: none !important;
 
-      text-align: center;
+  border: none !important;
+}
 
-      font-size: 13px;
+.teamspace-modal input,
+.teamspace-modal textarea,
+.teamspace-modal select {
 
-    }
+  background: var(--input-bg);
 
+  color: var(--text);
 
-    /* =====================================================
-       GROUP ADMIN CONTROLS
-    ====================================================== */
+  border-color: var(--border);
+}
 
-    .group-admin-controls {
+.teamspace-modal-actions,
+.modal-actions {
 
-      margin-bottom: 12px;
+  display: flex;
 
-      padding: 14px;
+  justify-content: flex-end;
 
-      border-radius: 12px;
+  gap: 8px;
 
-      background: rgba(37,99,235,.08);
+  margin-top: 18px;
+}
 
-    }
+.teamspace-modal-btn {
 
+  min-height: 39px;
 
-    .group-admin-controls label {
+  padding: 0 14px;
 
-      display: block;
+  border: 0;
 
-      margin-bottom: 7px;
+  border-radius: 9px;
 
-      font-size: 12px;
+  font-size: .71rem;
 
-      font-weight: 600;
+  font-weight: 750;
 
-    }
+  box-shadow: none;
+}
 
+.teamspace-primary-btn {
 
-    .group-admin-controls input {
+  background: var(--teams-blue-light);
 
-      width: 100%;
+  color: #ffffff;
+}
 
-      box-sizing: border-box;
+.teamspace-secondary-btn {
 
-      padding: 10px;
+  background: var(--surface-3);
 
-      border:
-        1px solid
-        rgba(127,127,127,.3);
+  color: var(--muted);
+}
 
-      border-radius: 8px;
 
-      background: transparent;
+/* ============================================================
+   IMAGE VIEWER
+   ============================================================ */
 
-      color: inherit;
+.image-viewer-overlay {
 
-      outline: none;
+  position: fixed;
 
-    }
+  z-index: 10000;
 
+  inset: 0;
 
-    .group-admin-controls input:focus {
+  display: flex;
 
-      border-color: #2563eb;
+  align-items: center;
 
-    }
+  justify-content: center;
 
+  padding: 20px;
 
-    .group-admin-save {
+  background: rgba(0,0,0,.88);
+}
 
-      width: 100%;
+.image-viewer-overlay img {
 
-      margin-top: 8px;
+  max-width: 95vw;
 
-      padding: 9px;
+  max-height: 90vh;
 
-      border: 0;
+  object-fit: contain;
 
-      border-radius: 8px;
+  border-radius: 10px;
 
-      background: #2563eb;
+  box-shadow: none;
+}
 
-      color: #ffffff;
 
-      cursor: pointer;
+/* ============================================================
+   THEME BUTTON
+   ============================================================ */
 
-      font-weight: 600;
+#themeToggle,
+#themeButton,
+.theme-toggle,
+.theme-btn,
+[data-theme-toggle] {
 
-    }
+  cursor: pointer !important;
 
+  color: #ffffff !important;
 
-    .group-admin-save:hover {
+  background: rgba(255,255,255,.10) !important;
 
-      opacity: .9;
+  border: 1px solid rgba(255,255,255,.12) !important;
 
-    }
+  border-radius: 8px !important;
 
+  box-shadow: none !important;
+}
 
-    .group-admin-save:disabled {
+#themeToggle:hover,
+#themeButton:hover,
+.theme-toggle:hover,
+.theme-btn:hover,
+[data-theme-toggle]:hover {
 
-      opacity: .6;
+  background: rgba(255,255,255,.20) !important;
 
-      cursor: not-allowed;
+  color: #ffffff !important;
+}
 
-    }
 
+/* ============================================================
+   GLOBAL TEXT CLEANUP
+   ============================================================ */
 
-    /* =====================================================
-       GROUP MEMBERS
-    ====================================================== */
+p,
+span,
+strong,
+small,
+label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
 
-    .group-members-heading {
+  outline: none !important;
+}
 
-      margin: 20px 0 10px;
+.message-text,
+.message-content,
+.message-body,
+.message-bubble {
 
-      font-size: 14px;
+  outline: none !important;
+}
 
-      font-weight: 700;
 
-    }
+/* ============================================================
+   DARK MODE — CHAT
+   ============================================================ */
 
+body.dark-mode .chat-area,
+body.dark-mode #chatScreen,
+body.dark-mode .chat-screen,
+body.dark-mode .chat-container,
+body.dark-mode .conversation,
+body.dark-mode .conversation-container {
 
-    .group-members-list {
+  background:
+    linear-gradient(
+      135deg,
+      #071426 0%,
+      #081a30 50%,
+      #0c213b 100%
+    ) !important;
 
-      display: flex;
+  color: #f3f7fc !important;
+}
 
-      flex-direction: column;
+body.dark-mode .messages-box {
 
-      gap: 7px;
+  background:
+    linear-gradient(
+      135deg,
+      #071426 0%,
+      #081a30 55%,
+      #0c213b 100%
+    ) !important;
+}
 
-      max-height: 300px;
 
-      overflow-y: auto;
+/* ============================================================
+   DARK MODE — CHAT HEADER
+   ============================================================ */
 
-      scrollbar-width: thin;
+body.dark-mode .chat-header,
+body.dark-mode #chatHeader,
+body.dark-mode .conversation-header {
 
-    }
+  background: #0b1c32 !important;
 
+  color: #f3f7fc !important;
 
-    .group-members-list::-webkit-scrollbar {
+  border-bottom: 1px solid #21405f !important;
 
-      width: 6px;
+  box-shadow: none !important;
+}
 
-    }
+body.dark-mode .chat-header h1,
+body.dark-mode .chat-header p {
 
+  color: #f3f7fc !important;
+}
 
-    .group-members-list::-webkit-scrollbar-thumb {
 
-      background:
-        rgba(100,116,139,.45);
+/* ============================================================
+   DARK MODE — INCOMING MESSAGE
+   STILL WHITE AS REQUESTED
+   ============================================================ */
 
-      border-radius: 10px;
+body.dark-mode .message-row.other .message-bubble,
+body.dark-mode .message-row.other .message,
+body.dark-mode .message.incoming,
+body.dark-mode .incoming-message,
+body.dark-mode .message.received {
 
-    }
+  background: #ffffff !important;
 
+  color: #202124 !important;
 
-    .group-member {
+  border: none !important;
 
-      display: flex;
+  box-shadow: none !important;
+}
 
-      align-items: center;
+body.dark-mode .message-row.other .message-bubble *,
+body.dark-mode .message-row.other .message * {
 
-      gap: 10px;
+  color: #202124 !important;
 
-      padding: 10px;
+  background: transparent !important;
 
-      border-radius: 10px;
+  border: none !important;
 
-      background:
-        rgba(127,127,127,.08);
+  box-shadow: none !important;
+}
 
-      min-width: 0;
 
-    }
+/* ============================================================
+   DARK MODE — OUTGOING GREEN
+   ============================================================ */
 
+body.dark-mode .message-row.own .message-bubble,
+body.dark-mode .message-row.mine .message,
+body.dark-mode .message.outgoing,
+body.dark-mode .outgoing-message,
+body.dark-mode .message.sent {
 
-    .group-member-avatar {
+  background: #128c7e !important;
 
-      width: 38px;
-      height: 38px;
+  color: #ffffff !important;
 
-      flex-shrink: 0;
+  border: none !important;
 
-      display: flex;
+  box-shadow: none !important;
+}
 
-      align-items: center;
+body.dark-mode .message-row.own .message-bubble *,
+body.dark-mode .message-row.mine .message * {
 
-      justify-content: center;
+  color: #ffffff !important;
 
-      border-radius: 50%;
+  background: transparent !important;
 
-      background: #2563eb;
+  border: none !important;
 
-      color: #ffffff;
+  box-shadow: none !important;
+}
 
-      font-size: 13px;
 
-      font-weight: 700;
+/* ============================================================
+   DARK MODE — COMPOSER
+   ============================================================ */
 
-    }
+body.dark-mode .message-form,
+body.dark-mode .composer,
+body.dark-mode #messageForm,
+body.dark-mode .chat-composer,
+body.dark-mode .message-composer {
 
+  background: #0b1c32 !important;
 
-    .group-member-info {
+  border-top: 1px solid #21405f !important;
+}
 
-      min-width: 0;
+body.dark-mode #messageInput,
+body.dark-mode .message-input,
+body.dark-mode .composer input,
+body.dark-mode .composer textarea,
+body.dark-mode .message-composer input,
+body.dark-mode .message-composer textarea {
 
-      flex: 1;
+  background: #0a1b30 !important;
 
-    }
+  color: #f3f7fc !important;
 
+  border: 1px solid #294965 !important;
 
-    .group-member-name {
+  box-shadow: none !important;
+}
 
-      font-weight: 600;
 
-      overflow: hidden;
+/* ============================================================
+   DARK MODE — SIDEBAR
+   ============================================================ */
 
-      text-overflow: ellipsis;
+body.dark-mode .sidebar {
 
-      white-space: nowrap;
+  background:
+    linear-gradient(
+      180deg,
+      #25274a 0%,
+      #171a35 100%
+    ) !important;
+}
 
-    }
 
+/* ============================================================
+   DARK MODE — BUTTONS
+   ============================================================ */
 
-    .group-member-email {
+body.dark-mode .send-button,
+body.dark-mode #sendButton,
+body.dark-mode #sendMessageButton,
+body.dark-mode .send-btn,
+body.dark-mode .primary-btn {
 
-      margin-top: 2px;
+  background: #6264a7 !important;
 
-      font-size: 12px;
+  color: #ffffff !important;
 
-      opacity: .65;
+  box-shadow: none !important;
+}
 
-      overflow: hidden;
+body.dark-mode .send-button:hover,
+body.dark-mode #sendButton:hover,
+body.dark-mode #sendMessageButton:hover,
+body.dark-mode .send-btn:hover,
+body.dark-mode .primary-btn:hover {
 
-      text-overflow: ellipsis;
+  background: #7375bb !important;
+}
 
-      white-space: nowrap;
 
-    }
+/* ============================================================
+   DARK MODE — MODALS
+   ============================================================ */
 
+body.dark-mode .teamspace-modal {
 
-    .group-admin-badge {
+  background: #0d223d !important;
 
-      display: inline-flex;
+  color: #f3f7fc !important;
 
-      align-items: center;
+  border-color: #21405f !important;
 
-      justify-content: center;
+  box-shadow: none !important;
+}
 
-      flex-shrink: 0;
 
-      padding: 4px 8px;
+/* ============================================================
+   DARK MODE — GROUP DETAILS
+   ============================================================ */
 
-      border-radius: 999px;
+body.dark-mode #groupDetailsContent,
+body.dark-mode #groupDetailsContent p,
+body.dark-mode #groupDetailsContent div,
+body.dark-mode #groupDetailsContent span,
+body.dark-mode #groupDetailsContent strong {
 
-      background:
-        rgba(212,160,23,.18);
+  background: transparent !important;
 
-      color: #a87900;
+  border: none !important;
 
-      font-size: 11px;
+  box-shadow: none !important;
 
-      font-weight: 700;
+  color: #f3f7fc;
+}
 
-    }
 
+/* ============================================================
+   MOBILE
+   ============================================================ */
 
-    .group-member-remove {
+@media (max-width:850px) {
 
-      flex-shrink: 0;
+  .app-shell {
+    flex-direction: column;
+  }
 
-      border: 0;
+  .sidebar {
 
-      padding: 7px 9px;
+    width: 100%;
 
-      border-radius: 7px;
+    flex: none;
 
-      background:
-        rgba(220,38,38,.1);
+    min-height: auto;
 
-      color: #dc2626;
+    max-height: 43vh;
 
-      cursor: pointer;
+    border-right: 0;
 
-      font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+  }
 
-    }
+  .user-list {
 
+    min-height: 100px;
 
-    .group-member-remove:hover {
+    max-height: 170px;
+  }
 
-      background:
-        rgba(220,38,38,.18);
+  .sidebar-actions {
 
-    }
+    display: grid;
 
+    grid-template-columns: repeat(3,1fr);
 
-    .group-member-remove:disabled {
+    gap: 3px;
+  }
 
-      opacity: .5;
+  .sidebar-actions button {
 
-      cursor: not-allowed;
+    justify-content: center;
 
-    }
+    padding: 0 3px;
+  }
 
+  .chat-area {
 
-    /* =====================================================
-       LEAVE GROUP
-    ====================================================== */
+    min-height: 57vh;
 
-    .group-profile-actions {
+    height: 57vh;
+  }
 
-      margin-top: 20px;
+  .chat-header {
 
-    }
+    min-height: 65px;
 
+    flex-basis: 65px;
 
-    .danger-profile-btn {
+    padding: 9px 13px;
+  }
 
-      width: 100%;
+  .messages-box {
 
-      padding: 11px;
+    padding: 15px 10px;
+  }
 
-      border: 0;
+  .message-content {
+    max-width: 87%;
+  }
+}
 
-      border-radius: 9px;
 
-      background: #dc2626;
+/* ============================================================
+   SMALL MOBILE
+   ============================================================ */
 
-      color: #ffffff;
+@media (max-width:520px) {
 
-      cursor: pointer;
+  #authScreen {
+    padding: 15px 9px;
+  }
 
-      font-weight: 600;
+  #authCard {
 
-    }
+    padding: 22px 16px;
 
+    border-radius: 17px;
+  }
 
-    .danger-profile-btn:hover {
+  .auth-brand img {
 
-      opacity: .9;
+    width: 49px;
 
-    }
+    height: 49px;
+  }
 
+  .auth-heading h1 {
+    font-size: 1.42rem;
+  }
 
-    /* =====================================================
-       PROFILE CLICK AREAS
-    ====================================================== */
+  .sidebar {
+    max-height: 39vh;
+  }
 
-    .profile {
+  .app-brand {
 
-      cursor: pointer;
+    min-height: 61px;
 
-    }
+    padding: 10px 12px;
+  }
 
+  .app-brand img {
 
-    .chat-header-info {
+    width: 34px;
 
-      cursor: pointer;
+    height: 34px;
 
-    }
+    flex-basis: 34px;
+  }
 
+  .profile-card {
+    margin: 8px;
+  }
 
-    /* =====================================================
-       TABLETS
-    ====================================================== */
+  .workspace-nav {
+    padding: 0 8px 8px;
+  }
 
-    @media (max-width: 900px) {
+  .user-list {
+    max-height: 140px;
+  }
 
-      .sidebar {
+  #userList > *,
+  #userList button,
+  #userList .user-item,
+  #userList .chat-item,
+  #userList .user-list-item,
+  #userList .group-item,
+  #userList .group-list-item {
 
-        width:
-          min(330px, 38vw);
+    min-height: 51px !important;
 
-      }
+    padding: 6px 7px !important;
+  }
 
-    }
+  #userList .user-avatar,
+  #userList .group-avatar {
 
+    width: 35px !important;
 
-    /* =====================================================
-       PHONES
-    ====================================================== */
+    height: 35px !important;
 
-    @media (max-width: 760px) {
+    min-width: 35px !important;
 
-      .app {
+    min-height: 35px !important;
 
-        flex-direction: column !important;
+    max-width: 35px !important;
 
-      }
+    max-height: 35px !important;
 
+    flex-basis: 35px !important;
+  }
 
-      .sidebar {
+  .chat-area {
 
-        width: 100% !important;
+    min-height: 61vh;
 
-        height: 44dvh !important;
+    height: 61vh;
+  }
 
-        min-height: 280px;
+  .message-content {
+    max-width: 91%;
+  }
 
-        max-height: 44dvh;
+  .message-form,
+  .composer {
+    padding: 8px;
+  }
 
-        border-right: none !important;
+  .message-image {
+    max-width: 260px;
+  }
+}
 
-        border-bottom:
-          1px solid
-          rgba(148,163,184,.25);
 
-      }
+/* ============================================================
+   ACCESSIBILITY
+   ============================================================ */
 
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
 
-      .chat-area {
+  outline:
+    2px solid rgba(98,100,167,.55);
 
-        width: 100%;
+  outline-offset: 2px;
+}
 
-        height: 56dvh !important;
-
-        min-height: 0;
-
-      }
-
-
-      .chat-header {
-
-        padding: 10px 12px !important;
-
-      }
-
-
-      .chat-header h2 {
-
-        font-size: 16px !important;
-
-      }
-
-
-      .chat-header p {
-
-        font-size: 12px !important;
-
-      }
-
-
-      .messages {
-
-        padding: 10px !important;
-
-      }
-
-
-      .composer {
-
-        padding: 8px !important;
-
-      }
-
-
-      #messageInput {
-
-        min-width: 0;
-
-        font-size: 16px !important;
-
-      }
-
-
-      .profile-modal {
-
-        padding: 12px;
-
-      }
-
-
-      .profile-modal-card {
-
-        max-height: 92vh;
-
-        padding: 24px 18px;
-
-      }
-
-    }
-
-
-    /* =====================================================
-       SMALL PHONES
-    ====================================================== */
-
-    @media (max-width: 480px) {
-
-      .sidebar {
-
-        height: 47dvh !important;
-
-        max-height: 47dvh;
-
-        min-height: 260px;
-
-      }
-
-
-      .chat-area {
-
-        height: 53dvh !important;
-
-      }
-
-
-      .user-item {
-
-        padding: 8px !important;
-
-      }
-
-
-      .message {
-
-        max-width: 86% !important;
-
-      }
-
-
-      .profile-modal-avatar {
-
-        width: 72px;
-
-        height: 72px;
-
-      }
-
-
-      .group-members-list {
-
-        max-height: 260px;
-
-      }
-
-
-      .group-member {
-
-        padding: 8px;
-
-      }
-
-
-      .group-member-remove {
-
-        padding: 6px 7px;
-
-        font-size: 11px;
-
-      }
-
-    }
-
-
-    /* =====================================================
-       VERY SMALL SCREENS
-    ====================================================== */
-
-    @media (max-width: 360px) {
-
-      .sidebar {
-
-        min-height: 245px;
-
-      }
-
-
-      .profile-modal-card {
-
-        padding:
-          20px 14px;
-
-      }
-
-
-      .group-admin-controls {
-
-        padding: 11px;
-
-      }
-
-    }
-
-  </style>
+</style>
 
 </head>
 
@@ -1277,199 +2784,194 @@
 <body>
 
 
-  <!-- =====================================================
-       AUTHENTICATION SCREEN
-  ====================================================== -->
+  <!-- =======================================================
+       AUTHENTICATION
+  ======================================================== -->
 
-  <section
-    id="authScreen"
-    class="auth-screen"
-  >
+  <section id="authScreen">
 
-    <div class="auth-card">
+    <div class="auth-container">
 
+      <div class="auth-brand">
 
-<!-- BRAND -->
-
-<div class="brand brand-large">
-
-  <div class="brand-icon">
-    T
-  </div>
-
-  <div class="landing-brand-text">
-
-    <strong class="landing-teams-chat">
-      Teams Chat
-    </strong>
-
-    <span class="landing-connect-chat">
-      Connect Chat
-    </span>
-
-  </div>
-
-</div>
-
-
-
-
-      <!-- AUTH TABS -->
-
-      <div class="auth-tabs">
-
-        <button
-          class="tab active"
-          data-mode="login"
-          type="button"
+        <img
+          src="images/logo.png"
+          alt="Teams Chat"
         >
-          Sign in
-        </button>
 
+        <div class="auth-brand-name">
+          Teams Chat.
+        </div>
 
-        <button
-          class="tab"
-          data-mode="register"
-          type="button"
-        >
-          Create account
-        </button>
+        <div class="auth-brand-subtitle">
+          Connect. Communicate. Collaborate.
+        </div>
 
       </div>
 
 
-      <!-- AUTH FORM -->
+      <div id="authCard">
 
-      <form
-        id="authForm"
-        novalidate
-      >
+        <div class="auth-heading">
+
+          <h1 id="authTitle">
+            Welcome back
+          </h1>
+
+          <p id="authSubtitle">
+            Sign in to continue to your workspace.
+          </p>
+
+        </div>
 
 
-        <!-- NAME -->
+        <div class="auth-tabs">
 
-        <div
-          id="nameGroup"
-          class="form-group hidden"
+          <button
+            type="button"
+            class="auth-tab tab active"
+            data-auth-mode="login"
+            data-mode="login"
+            id="loginTab"
+          >
+            Sign In
+          </button>
+
+          <button
+            type="button"
+            class="auth-tab tab"
+            data-auth-mode="register"
+            data-mode="register"
+            id="registerTab"
+          >
+            Create Account
+          </button>
+
+        </div>
+
+
+        <form
+          id="authForm"
+          autocomplete="on"
         >
 
-          <label for="name">
-            Full name
-          </label>
-
-
-          <input
-            id="name"
-            type="text"
-            placeholder="e.g. Username"
-            autocomplete="name"
+          <div
+            class="form-group hidden"
+            id="nameGroup"
           >
+
+            <label for="nameInput">
+              Full name
+            </label>
+
+            <input
+              id="nameInput"
+              type="text"
+              autocomplete="name"
+              placeholder="Enter your name"
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="emailInput">
+              Email address
+            </label>
+
+            <input
+              id="emailInput"
+              type="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="passwordInput">
+              Password
+            </label>
+
+            <input
+              id="passwordInput"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              required
+            >
+
+          </div>
+
+
+          <div
+            id="authError"
+            role="alert"
+            aria-live="polite"
+          ></div>
+
+
+          <button
+            id="authButton"
+            type="submit"
+          >
+            Sign In
+          </button>
+
+        </form>
+
+
+        <div class="auth-footer">
+
+          Secure real-time team communication.
 
         </div>
 
-
-        <!-- EMAIL -->
-
-        <div class="form-group">
-
-          <label for="email">
-            Email
-          </label>
-
-
-          <input
-            id="email"
-            type="email"
-            placeholder="you@example.com"
-            autocomplete="email"
-            required
-          >
-
-        </div>
-
-
-        <!-- PASSWORD -->
-
-        <div class="form-group">
-
-          <label for="password">
-            Password
-          </label>
-
-
-          <input
-            id="password"
-            type="password"
-            placeholder="At least 6 characters"
-            autocomplete="current-password"
-            required
-          >
-
-        </div>
-
-
-        <!-- AUTH BUTTON -->
-
-        <button
-          id="authButton"
-          class="primary-btn"
-          type="submit"
-        >
-          Sign in
-        </button>
-
-
-        <!-- AUTH ERROR -->
-
-        <p
-          id="authError"
-          class="error"
-        ></p>
-
-      </form>
+      </div>
 
     </div>
 
   </section>
 
 
-  <!-- =====================================================
-       MAIN APPLICATION
-  ====================================================== -->
+  <!-- =======================================================
+       APPLICATION
+  ======================================================== -->
 
-  <div
+  <section
     id="appScreen"
-    class="app hidden"
+    class="hidden"
   >
 
-
-    <!-- =================================================
-         SIDEBAR
-    ================================================== -->
-
-    <aside class="sidebar">
+    <div class="app-shell">
 
 
-      <!-- SIDEBAR TOP -->
+      <!-- ===================================================
+           SIDEBAR
+      ==================================================== -->
 
-      <div class="sidebar-top">
+      <aside class="sidebar">
 
-        <div class="brand">
 
-          <div class="brand-icon">
-            T
-          </div>
+        <div class="app-brand">
 
+          <img
+            src="images/logo.png"
+            alt="Teams Chat"
+          >
 
           <div>
 
             <strong>
-              Teams Chat
+              Teams Chat.
             </strong>
 
-
             <span>
-              Messaging
+              Workspace
             </span>
 
           </div>
@@ -1477,113 +2979,93 @@
         </div>
 
 
-        <!-- DARK MODE -->
-
-        <button
-          id="themeToggle"
-          class="theme-toggle"
-          type="button"
-          title="Toggle dark mode"
-          aria-label="Toggle dark mode"
+        <div
+          id="profileCard"
+          class="profile-card profile"
         >
-          🌙
-        </button>
 
-      </div>
+          <div
+            id="profileAvatar"
+            class="profile-avatar"
+          >
+            ?
+          </div>
 
 
-      <!-- =================================================
-           WORKSPACE NAVIGATION
-      ================================================== -->
+          <div class="profile-details">
 
-      <div class="sidebar-section">
+            <strong id="profileName">
+              User
+            </strong>
 
-        <div class="section-title">
-          Workspace
+            <span id="profileEmail">
+              user@example.com
+            </span>
+
+          </div>
+
         </div>
 
 
-        <div class="workspace-nav">
+        <!-- ===============================================
+             SIDE NAVIGATION
+        ================================================ -->
 
-
-          <!-- CHAT -->
+        <nav
+          id="workspaceNav"
+          class="workspace-nav"
+          aria-label="Workspace navigation"
+        >
 
           <button
             id="chatNav"
-            class="nav-item active"
             type="button"
+            class="workspace-nav-button active nav-item"
           >
-
+            💬
             <span>
-              💬
+              Chats
             </span>
-
-            Chat
-
           </button>
 
-
-          <!-- PEOPLE -->
 
           <button
             id="peopleNav"
-            class="nav-item"
             type="button"
+            class="workspace-nav-button nav-item"
           >
-
+            👥
             <span>
-              👥
+              People
             </span>
-
-            People
-
           </button>
 
-
-          <!-- GROUPS -->
 
           <button
             id="groupsNav"
-            class="nav-item"
             type="button"
+            class="workspace-nav-button nav-item"
           >
-
+            ▦
             <span>
-              👥
+              Groups
             </span>
-
-            Groups
-
           </button>
 
-        </div>
-
-      </div>
+        </nav>
 
 
-      <!-- =================================================
-           CHAT / PEOPLE / GROUPS LIST
-      ================================================== -->
+        <div class="sidebar-list-header">
 
-      <div
-        class="sidebar-section contacts-section"
-      >
-
-
-        <!-- LIST HEADER -->
-
-        <div class="section-title">
-
-          <span id="listTitle">
+          <h2 id="listTitle">
             Chats
-          </span>
-
+          </h2>
 
           <button
             id="refreshUsers"
             type="button"
-            title="Refresh"
             aria-label="Refresh"
+            title="Refresh"
           >
             ↻
           </button>
@@ -1592,430 +3074,463 @@
 
 
         <!--
-          The JavaScript reuses this container
-          for Chat, People and Groups.
+          app.js uses this container for
+          people, chats and groups.
         -->
 
-        <div id="userList"></div>
-
-      </div>
-
-
-      <!-- =================================================
-           CURRENT USER PROFILE
-      ================================================== -->
-
-      <div
-        class="profile"
-        title="Open your profile"
-      >
-
-
-        <!-- AVATAR -->
-
         <div
-          id="myAvatar"
-          class="avatar"
+          id="userList"
+          class="user-list"
         ></div>
 
 
-        <!-- USER DETAILS -->
+        <div class="sidebar-actions">
 
-        <div class="profile-info">
+          <button
+            id="themeToggle"
+            class="theme-toggle"
+            type="button"
+            aria-label="Switch to dark mode"
+            title="Switch to dark mode"
+          >
+            🌙
+            <span>
+              Dark mode
+            </span>
+          </button>
 
-          <strong
-            id="myName"
-          ></strong>
-
-
-          <span
-            id="myEmail"
-          ></span>
-
-        </div>
-
-
-        <!-- ACCOUNT ACTIONS -->
-
-        <div class="account-actions">
-
-
-          <!-- LOGOUT -->
 
           <button
             id="logoutBtn"
-            class="account-btn logout-btn"
+            class="account-btn"
             type="button"
-            title="Log out"
-            aria-label="Log out"
           >
             ↪
+            <span>
+              Logout
+            </span>
           </button>
 
-
-          <!-- DELETE ACCOUNT -->
 
           <button
             id="deleteAccountBtn"
-            class="account-btn delete-account-btn"
+            class="danger-action delete-account-btn"
             type="button"
-            title="Delete account"
-            aria-label="Delete account"
           >
             🗑
+            <span>
+              Delete account
+            </span>
           </button>
 
         </div>
 
-      </div>
-
-    </aside>
+      </aside>
 
 
-    <!-- =================================================
-         CHAT AREA
-    ================================================== -->
+      <!-- ===================================================
+           CHAT AREA
+      ==================================================== -->
 
-    <main class="chat-area">
-
-
-      <!-- =================================================
-           CHAT HEADER
-      ================================================== -->
-
-      <header class="chat-header">
+      <main class="chat-area">
 
 
-        <!-- CURRENT CHAT AVATAR -->
-
-        <div
-          id="chatUserAvatar"
-          class="avatar"
-        ></div>
-
-
-        <!--
-          Clicking this area opens the selected
-          person's profile or group profile.
-        -->
-
-        <div
+        <header
           id="chatHeaderInfo"
-          class="chat-header-info"
-          title="Open profile"
+          class="chat-header chat-header-info"
         >
 
-          <h2 id="chatUserName">
-            Select a contact
-          </h2>
-
-
-          <p id="chatStatus">
-            Choose someone from People to start chatting.
-          </p>
-
-        </div>
-
-      </header>
-
-
-      <!-- =================================================
-           MESSAGES
-      ================================================== -->
-
-      <section
-        id="messages"
-        class="messages"
-      >
-
-        <div class="empty-chat">
-
-
-          <div class="empty-icon">
+          <div
+            id="chatUserAvatar"
+            class="chat-header-avatar"
+          >
             💬
           </div>
 
 
-          <h2>
-            Your conversations
-          </h2>
+          <div class="chat-header-details">
+
+            <h1 id="chatUserName">
+              Welcome to Teams Chat.
+            </h1>
+
+            <p id="chatStatus">
+              Select a conversation to start chatting.
+            </p>
+
+          </div>
+
+        </header>
 
 
-          <p>
-            Select a person from People to start a private chat,
-            or open Chat to continue an existing conversation.
-          </p>
-
-        </div>
-
-      </section>
-
-
-      <!-- =================================================
-           MESSAGE COMPOSER
-      ================================================== -->
-
-      <form
-        id="messageForm"
-        class="composer hidden"
-      >
-
-
-        <!-- PHOTO BUTTON -->
-
-        <button
-          id="imageButton"
-          class="image-button"
-          type="button"
-          title="Share a photo"
-          aria-label="Share a photo"
-        >
-          📷
-        </button>
-
-
-        <!-- PHOTO INPUT -->
-
-        <input
-          id="imageInput"
-          type="file"
-          accept="image/*"
-          hidden
+        <section
+          id="messagesBox"
+          class="messages-box"
+          aria-live="polite"
         >
 
+          <div class="chat-welcome">
 
-        <!-- MESSAGE INPUT -->
+            <div class="chat-welcome-icon">
+              💬
+            </div>
 
-        <input
-          id="messageInput"
-          type="text"
+            <h2>
+              Welcome to Teams Chat.
+            </h2>
+
+            <p>
+              Select a person or group from the left
+              to start a conversation.
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <div
+          id="uploadStatus"
+          class="upload-status"
+          aria-live="polite"
+        ></div>
+
+
+        <form
+          id="messageForm"
+          class="message-form composer hidden"
           autocomplete="off"
-          maxlength="5000"
-          placeholder="Type a message..."
         >
 
-
-        <!-- SEND BUTTON -->
-
-        <button
-          id="sendMessageBtn"
-          type="submit"
-          title="Send message"
-          aria-label="Send message"
-        >
-          ➤
-        </button>
-
-      </form>
+          <button
+            type="button"
+            id="imageButton"
+            class="composer-button image-button"
+            title="Send image"
+            aria-label="Send image"
+          >
+            📷
+          </button>
 
 
-      <!-- =================================================
-           PHOTO UPLOAD STATUS
-      ================================================== -->
-
-      <div
-        id="uploadStatus"
-        class="upload-status"
-        aria-live="polite"
-      ></div>
-
-    </main>
-
-  </div>
+          <input
+            id="imageInput"
+            type="file"
+            accept="image/*"
+            hidden
+          >
 
 
-  <!-- =====================================================
-       USER PROFILE MODAL
-  ====================================================== -->
-
-  <div
-    id="profileModal"
-    class="profile-modal hidden"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="profileModalTitle"
-  >
-
-    <div class="profile-modal-card">
+          <input
+            id="messageInput"
+            type="text"
+            maxlength="5000"
+            placeholder="Write a message..."
+            autocomplete="off"
+          >
 
 
-      <!-- CLOSE -->
+          <button
+            type="submit"
+            class="send-button"
+            title="Send message"
+            aria-label="Send message"
+          >
+            ➤
+          </button>
 
-      <button
-        id="closeProfileModal"
-        class="profile-modal-close"
-        type="button"
-        aria-label="Close profile"
-      >
-        ×
-      </button>
+        </form>
 
-
-      <!-- AVATAR -->
-
-      <div
-        id="profileModalAvatar"
-        class="profile-modal-avatar"
-      ></div>
-
-
-      <!-- NAME -->
-
-      <h2
-        id="profileModalTitle"
-      >
-        Profile
-      </h2>
-
-
-      <!-- EMAIL / DESCRIPTION -->
-
-      <p
-        id="profileModalSubtitle"
-        class="profile-modal-subtitle"
-      ></p>
-
-
-      <!-- PROFILE CONTENT -->
-
-      <div
-        id="profileModalContent"
-      ></div>
+      </main>
 
     </div>
 
-  </div>
+  </section>
 
 
-  <!-- =====================================================
-       GROUP PROFILE MODAL
-  ====================================================== -->
+  <!-- =======================================================
+       FIREBASE
+  ======================================================== -->
 
-  <div
-    id="groupProfileModal"
-    class="profile-modal hidden"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="groupProfileName"
-  >
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 
-    <div
-      class="profile-modal-card group-profile-card"
-    >
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 
 
-      <!-- CLOSE -->
+  <!-- =======================================================
+       THEME INITIALIZATION
+       This runs BEFORE app.js so the correct background
+       is applied immediately.
+  ======================================================== -->
 
-      <button
-        id="closeGroupProfileModal"
-        class="profile-modal-close"
-        type="button"
-        aria-label="Close group profile"
-      >
-        ×
-      </button>
+  <script>
 
+    (function () {
 
-      <!-- GROUP AVATAR -->
+      try {
 
-      <div
-        id="groupProfileAvatar"
-        class="profile-modal-avatar group-avatar"
-      >
-        👥
-      </div>
+        const saved =
+          localStorage.getItem(
+            "teamspaceTheme"
+          ) || "light";
 
+        const dark =
+          saved === "dark";
 
-      <!-- GROUP NAME -->
+        document.documentElement
+          .classList.toggle(
+            "teamspace-dark",
+            dark
+          );
 
-      <h2
-        id="groupProfileName"
-      >
-        Group
-      </h2>
+        document.body
+          .classList.toggle(
+            "dark-mode",
+            dark
+          );
 
+        document.documentElement
+          .style.colorScheme =
+            dark
+              ? "dark"
+              : "light";
 
-      <!-- GROUP MEMBER COUNT -->
+      } catch (error) {
 
-      <p
-        id="groupProfileSubtitle"
-        class="profile-modal-subtitle"
-      ></p>
+        console.warn(
+          "Unable to initialize saved theme.",
+          error
+        );
 
+      }
 
-      <!--
-        ADMIN CONTROLS
+    })();
 
-        JavaScript adds the group name editor
-        here when the current user is Admin.
-      -->
-
-      <div
-        id="groupAdminControls"
-      ></div>
-
-
-      <!-- MEMBERS TITLE -->
-
-      <div class="group-members-heading">
-        Members
-      </div>
+  </script>
 
 
-      <!-- MEMBERS -->
-
-      <div
-        id="groupMembersList"
-        class="group-members-list"
-      ></div>
-
-
-      <!-- GROUP ACTIONS -->
-
-      <div class="group-profile-actions">
-
-
-        <!-- LEAVE GROUP -->
-
-        <button
-          id="leaveGroupBtn"
-          class="danger-profile-btn"
-          type="button"
-        >
-          Leave Group
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <!-- =====================================================
-       FIREBASE SDK
-  ====================================================== -->
-
-  <script
-    src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"
-  ></script>
-
-
-  <script
-    src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"
-  ></script>
-
-
-  <script
-    src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"
-  ></script>
-
-
-  <!-- =====================================================
-       TEAMSPACE APPLICATION
-  ====================================================== -->
+  <!-- =======================================================
+       YOUR EXISTING APP.JS
+  ======================================================== -->
 
   <script src="/app.js"></script>
+
+
+  <!-- =======================================================
+     THEME SYNCHRONIZATION
+     Keeps:
+     - body.dark-mode
+     - html.teamspace-dark
+     - localStorage
+     - color-scheme
+     synchronized with each other.
+======================================================== -->
+
+<script>
+
+(function () {
+
+  const THEME_KEY = "teamspaceTheme";
+
+
+  function applyTheme(theme) {
+
+    const dark =
+      theme === "dark";
+
+
+    /* -----------------------------------------
+       Apply theme to BODY
+    ----------------------------------------- */
+
+    document.body.classList.toggle(
+      "dark-mode",
+      dark
+    );
+
+
+    /* -----------------------------------------
+       Apply theme to HTML
+    ----------------------------------------- */
+
+    document.documentElement.classList.toggle(
+      "teamspace-dark",
+      dark
+    );
+
+
+    /* -----------------------------------------
+       Tell browser which color scheme is active
+    ----------------------------------------- */
+
+    document.documentElement.style.colorScheme =
+      dark
+        ? "dark"
+        : "light";
+
+
+    /* -----------------------------------------
+       Save theme
+    ----------------------------------------- */
+
+    try {
+
+      localStorage.setItem(
+        THEME_KEY,
+        dark
+          ? "dark"
+          : "light"
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "Unable to save TeamSpace theme.",
+        error
+      );
+
+    }
+
+  }
+
+
+  /* =======================================================
+     READ SAVED THEME
+  ======================================================== */
+
+  let savedTheme = "light";
+
+
+  try {
+
+    savedTheme =
+      localStorage.getItem(
+        THEME_KEY
+      ) || "light";
+
+  } catch (error) {
+
+    console.warn(
+      "Unable to read TeamSpace theme.",
+      error
+    );
+
+  }
+
+
+  /* =======================================================
+     APPLY SAVED THEME
+  ======================================================== */
+
+  applyTheme(
+    savedTheme === "dark"
+      ? "dark"
+      : "light"
+  );
+
+
+  /* =======================================================
+     WATCH FOR CHANGES MADE BY app.js
+     
+     If app.js adds/removes:
+     
+       body.dark-mode
+     
+     this keeps the HTML class and localStorage
+     synchronized.
+  ======================================================== */
+
+  const themeObserver =
+    new MutationObserver(
+      function () {
+
+        const dark =
+          document.body.classList.contains(
+            "dark-mode"
+          );
+
+
+        document.documentElement.classList.toggle(
+          "teamspace-dark",
+          dark
+        );
+
+
+        document.documentElement.style.colorScheme =
+          dark
+            ? "dark"
+            : "light";
+
+
+        try {
+
+          localStorage.setItem(
+            THEME_KEY,
+            dark
+              ? "dark"
+              : "light"
+          );
+
+        } catch (error) {
+
+          console.warn(
+            "Unable to synchronize TeamSpace theme.",
+            error
+          );
+
+        }
+
+      }
+    );
+
+
+  themeObserver.observe(
+    document.body,
+    {
+      attributes: true,
+      attributeFilter: ["class"]
+    }
+  );
+
+
+  /* =======================================================
+     SYNCHRONIZE BETWEEN TABS
+     
+     If TeamSpace is open in two browser tabs and
+     the theme changes in one tab, update the other.
+  ======================================================== */
+
+  window.addEventListener(
+    "storage",
+    function (event) {
+
+      if (
+        event.key !== THEME_KEY
+      ) {
+
+        return;
+
+      }
+
+
+      applyTheme(
+        event.newValue === "dark"
+          ? "dark"
+          : "light"
+      );
+
+    }
+  );
+
+
+})();
+
+</script>
+
+
+  </script>
 
 
 </body>
