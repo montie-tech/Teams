@@ -1,17 +1,13 @@
-/*
-  ============================================================
-  TEAMSPACE CHAT
-  Firebase Authentication + Realtime Database
-  Private chats use browser-side E2EE
-  ============================================================
-*/
+/* =========================================================
+   TEAMSPACE CHAT
+   Firebase Authentication + Realtime Database
+   Private Chat + Groups + Presence + Profiles
+   No E2EE — plain text / data URL messages
+   ========================================================= */
 
-
-/*
-  ============================================================
-  FIREBASE CONFIGURATION
-  ============================================================
-*/
+/* ---------------------------------------------------------
+   FIREBASE CONFIGURATION
+   --------------------------------------------------------- */
 
 const firebaseConfig = {
   apiKey: "AIzaSyBTj01QDxQJEp2iU_bTKvqV2TjxBg3cxlE",
@@ -19,129 +15,89 @@ const firebaseConfig = {
   databaseURL: "https://teams-3d363-default-rtdb.firebaseio.com",
   projectId: "teams-3d363",
   storageBucket: "teams-3d363.firebasestorage.app",
-  messagingSenderId: "702399693714",
-  appId: "1:702399693714:web:5ed8f61810f9de455c374b",
-  measurementId: "G-6RECH0R5EV"
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
-
-
-/*
-  ============================================================
-  FIREBASE INITIALIZATION
-  ============================================================
-*/
 
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-
-/*
-  ============================================================
-  FIREBASE SERVICES
-  ============================================================
-*/
-
 const auth = firebase.auth();
 const db = firebase.database();
 
+/* ---------------------------------------------------------
+   DOM REFERENCES
+   --------------------------------------------------------- */
 
-/*
-  ============================================================
-  DOM ELEMENTS
-  ============================================================
-*/
+const authScreen = document.getElementById("authScreen");
+const appScreen = document.getElementById("appScreen");
 
-const authScreen =
-  document.getElementById("authScreen");
+const authForm = document.getElementById("authForm");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authName = document.getElementById("authName");
+const authError = document.getElementById("authError");
+const authSubmit = document.getElementById("authSubmit");
+const nameGroup = document.getElementById("nameGroup");
 
-const appScreen =
-  document.getElementById("appScreen");
+const loginTab = document.getElementById("loginTab");
+const registerTab = document.getElementById("registerTab");
+const forgotPassword = document.getElementById("forgotPassword");
 
-const authForm =
-  document.getElementById("authForm");
+const themeToggle = document.getElementById("themeToggle");
 
-const authError =
-  document.getElementById("authError");
+const chatNav = document.getElementById("chatNav");
+const peopleNav = document.getElementById("peopleNav");
+const groupsNav = document.getElementById("groupsNav");
 
-const authButton =
-  document.getElementById("authButton");
+const listTitle = document.getElementById("listTitle");
+const refreshUsers = document.getElementById("refreshUsers");
 
-const nameGroup =
-  document.getElementById("nameGroup");
+const peopleSearchWrapper = document.getElementById("peopleSearchWrapper");
+const peopleSearchInput = document.getElementById("peopleSearchInput");
 
-const nameInput =
-  document.getElementById("nameInput");
+const userList = document.getElementById("userList");
 
-const emailInput =
-  document.getElementById("emailInput");
+const profileCard = document.getElementById("profileCard");
+const currentUserAvatar = document.getElementById("currentUserAvatar");
+const currentUserName = document.getElementById("currentUserName");
+const currentUserEmail = document.getElementById("currentUserEmail");
+const logoutButton = document.getElementById("logoutButton");
+const deleteAccountButton = document.getElementById("deleteAccountButton");
 
-const passwordInput =
-  document.getElementById("passwordInput");
+const chatHeaderAvatar = document.getElementById("chatHeaderAvatar");
+const chatHeaderInfo = document.getElementById("chatHeaderInfo");
+const chatHeaderName = document.getElementById("chatHeaderName");
+const chatHeaderStatus = document.getElementById("chatHeaderStatus");
 
-const userList =
-  document.getElementById("userList");
+const messages = document.getElementById("messages");
 
-const messagesBox =
-  document.getElementById("messagesBox");
+const messageForm = document.getElementById("messageForm");
+const messageInput = document.getElementById("messageInput");
+const imageButton = document.getElementById("imageButton");
+const imageInput = document.getElementById("imageInput");
+const uploadStatus = document.getElementById("uploadStatus");
 
-const messageForm =
-  document.getElementById("messageForm");
+const profileModal = document.getElementById("profileModal");
+const closeProfileModalBtn = document.getElementById("closeProfileModal");
+const profileModalAvatar = document.getElementById("profileModalAvatar");
+const profileModalTitle = document.getElementById("profileModalTitle");
+const profileModalSubtitle = document.getElementById("profileModalSubtitle");
+const profileModalContent = document.getElementById("profileModalContent");
 
-const messageInput =
-  document.getElementById("messageInput");
+const groupProfileModal = document.getElementById("groupProfileModal");
+const closeGroupProfileModalBtn = document.getElementById("closeGroupProfileModal");
+const groupProfileAvatar = document.getElementById("groupProfileAvatar");
+const groupProfileName = document.getElementById("groupProfileName");
+const groupProfileSubtitle = document.getElementById("groupProfileSubtitle");
+const groupAdminControls = document.getElementById("groupAdminControls");
+const groupMembersList = document.getElementById("groupMembersList");
+const leaveGroupBtn = document.getElementById("leaveGroupBtn");
 
-const chatUserName =
-  document.getElementById("chatUserName");
-
-const chatStatus =
-  document.getElementById("chatStatus");
-
-const chatUserAvatar =
-  document.getElementById("chatUserAvatar");
-
-const chatHeaderInfo =
-  document.getElementById("chatHeaderInfo");
-
-const themeToggle =
-  document.getElementById("themeToggle");
-
-const imageButton =
-  document.getElementById("imageButton");
-
-const imageInput =
-  document.getElementById("imageInput");
-
-const uploadStatus =
-  document.getElementById("uploadStatus");
-
-const logoutBtn =
-  document.getElementById("logoutBtn");
-
-const deleteAccountBtn =
-  document.getElementById("deleteAccountBtn");
-
-const refreshUsers =
-  document.getElementById("refreshUsers");
-
-const chatNav =
-  document.getElementById("chatNav");
-
-const peopleNav =
-  document.getElementById("peopleNav");
-
-const groupsNav =
-  document.getElementById("groupsNav");
-
-const listTitle =
-  document.getElementById("listTitle");
-
-
-/*
-  ============================================================
-  STATE
-  ============================================================
-*/
+/* ---------------------------------------------------------
+   STATE
+   --------------------------------------------------------- */
 
 let currentUser = null;
 let currentProfile = null;
@@ -153,7 +109,6 @@ let authMode = "login";
 
 let availableUsers = [];
 let chattedUsers = [];
-
 let groupCache = {};
 
 let currentWorkspace = "chat";
@@ -164,6198 +119,2687 @@ let groupsListener = null;
 let messageListener = null;
 let activeMessagePath = null;
 
-let presenceConnectionRef = null;
-let presenceConnectionCallback = null;
+let presenceRef = null;
+let presenceConnectedRef = null;
+let presenceCallback = null;
 
 let selectedPresenceRef = null;
 let selectedPresenceCallback = null;
+let selectedUserOnline = false;
 
-const activeListeners = [];
+let lastRenderedMessages = [];
+let currentGroupModalGroup = null;
 
+/* =========================================================
+   DYNAMIC STYLES
+   ========================================================= */
 
-/*
-  ============================================================
-  E2EE STATE
-  ============================================================
-*/
+function injectStyles() {
+  if (document.getElementById("teamspaceDynamicStyles")) return;
 
-let encryptionKeyPair = null;
-let encryptionInitialized = false;
-let publicEncryptionKey = null;
-
-
-/*
-  ============================================================
-  GENERAL HELPERS
-  ============================================================
-*/
-
-function initials(name) {
-
-  const value =
-    String(name || "User").trim();
-
-  if (!value) {
-    return "U";
-  }
-
-  const parts =
-    value.split(/\s+/);
-
-  if (parts.length === 1) {
-    return parts[0]
-      .substring(0, 2)
-      .toUpperCase();
-  }
-
-  return (
-    parts[0][0] +
-    parts[parts.length - 1][0]
-  ).toUpperCase();
-}
-
-
-function escapeHtml(value) {
-
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-
-function formatTime(timestamp) {
-
-  if (!timestamp) {
-    return "";
-  }
-
-  return new Date(timestamp)
-    .toLocaleTimeString(
-      [],
-      {
-        hour: "2-digit",
-        minute: "2-digit"
-      }
-    );
-}
-
-
-function formatDate(timestamp) {
-
-  if (!timestamp) {
-    return "";
-  }
-
-  return new Date(timestamp)
-    .toLocaleDateString(
-      [],
-      {
-        year: "numeric",
-        month: "short",
-        day: "numeric"
-      }
-    );
-}
-
-
-function formatLastSeen(timestamp) {
-
-  if (!timestamp) {
-    return "Offline";
-  }
-
-  return (
-    "Last seen " +
-    formatDate(timestamp) +
-    " at " +
-    formatTime(timestamp)
-  );
-}
-
-
-function setError(message) {
-
-  if (!authError) {
-    return;
-  }
-
-  authError.textContent =
-    message || "";
-}
-
-
-function firebaseError(error) {
-
-  if (!error) {
-    return "An unknown error occurred.";
-  }
-
-  const code =
-    error.code || "";
-
-  const messages = {
-
-    "auth/email-already-in-use":
-      "This email address is already registered.",
-
-    "auth/invalid-email":
-      "Please enter a valid email address.",
-
-    "auth/weak-password":
-      "Password is too weak.",
-
-    "auth/user-not-found":
-      "No account was found with this email.",
-
-    "auth/wrong-password":
-      "Incorrect email or password.",
-
-    "auth/invalid-credential":
-      "Incorrect email or password.",
-
-    "auth/too-many-requests":
-      "Too many attempts. Please try again later.",
-
-    "auth/network-request-failed":
-      "Network error. Please check your internet connection.",
-
-    "auth/requires-recent-login":
-      "Please sign in again before performing this action.",
-
-    "permission-denied":
-      "Firebase denied this operation. Check your database rules."
-
-  };
-
-  return (
-    messages[code] ||
-    error.message ||
-    "An unexpected Firebase error occurred."
-  );
-}
-
-
-function showAuth() {
-
-  authScreen?.classList.remove("hidden");
-  appScreen?.classList.add("hidden");
-}
-
-
-function showApplication() {
-
-  authScreen?.classList.add("hidden");
-  appScreen?.classList.remove("hidden");
-}
-
-
-function makeChatId(uid1, uid2) {
-
-  return [
-    uid1,
-    uid2
-  ]
-    .sort()
-    .join("_");
-}
-
-
-/*
-  ============================================================
-  E2EE - INDEXEDDB
-  ============================================================
-*/
-
-const E2EE_DB_NAME =
-  "teamspace-e2ee";
-
-const E2EE_STORE_NAME =
-  "keys";
-
-
-function openEncryptionDatabase() {
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const request =
-        indexedDB.open(
-          E2EE_DB_NAME,
-          1
-        );
-
-      request.onupgradeneeded =
-        () => {
-
-          const database =
-            request.result;
-
-          if (
-            !database.objectStoreNames.contains(
-              E2EE_STORE_NAME
-            )
-          ) {
-
-            database.createObjectStore(
-              E2EE_STORE_NAME
-            );
-
-          }
-        };
-
-      request.onsuccess =
-        () => {
-
-          resolve(
-            request.result
-          );
-
-        };
-
-      request.onerror =
-        () => {
-
-          reject(
-            request.error ||
-            new Error(
-              "Unable to open secure key storage."
-            )
-          );
-
-        };
-
-    }
-  );
-}
-
-
-async function savePrivateKey(
-  uid,
-  privateKey
-) {
-
-  const database =
-    await openEncryptionDatabase();
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const transaction =
-        database.transaction(
-          E2EE_STORE_NAME,
-          "readwrite"
-        );
-
-      const store =
-        transaction.objectStore(
-          E2EE_STORE_NAME
-        );
-
-      const request =
-        store.put(
-          privateKey,
-          uid
-        );
-
-      request.onsuccess =
-        () => {
-
-          database.close();
-          resolve();
-
-        };
-
-      request.onerror =
-        () => {
-
-          database.close();
-
-          reject(
-            request.error
-          );
-
-        };
-
-    }
-  );
-}
-
-
-async function loadPrivateKey(uid) {
-
-  const database =
-    await openEncryptionDatabase();
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const transaction =
-        database.transaction(
-          E2EE_STORE_NAME,
-          "readonly"
-        );
-
-      const store =
-        transaction.objectStore(
-          E2EE_STORE_NAME
-        );
-
-      const request =
-        store.get(uid);
-
-      request.onsuccess =
-        () => {
-
-          database.close();
-
-          resolve(
-            request.result || null
-          );
-
-        };
-
-      request.onerror =
-        () => {
-
-          database.close();
-
-          reject(
-            request.error
-          );
-
-        };
-
-    }
-  );
-}
-
-
-async function deletePrivateKey(uid) {
-
-  try {
-
-    const database =
-      await openEncryptionDatabase();
-
-    await new Promise(
-      (resolve, reject) => {
-
-        const transaction =
-          database.transaction(
-            E2EE_STORE_NAME,
-            "readwrite"
-          );
-
-        const store =
-          transaction.objectStore(
-            E2EE_STORE_NAME
-          );
-
-        const request =
-          store.delete(uid);
-
-        request.onsuccess =
-          resolve;
-
-        request.onerror =
-          () =>
-            reject(
-              request.error
-            );
-
-      }
-    );
-
-    database.close();
-
-  } catch (error) {
-
-    console.warn(
-      "Unable to remove local encryption key:",
-      error
-    );
-
-  }
-}
-
-
-/*
-  ============================================================
-  E2EE - BASE64 HELPERS
-  ============================================================
-*/
-
-function arrayBufferToBase64(buffer) {
-
-  const bytes =
-    new Uint8Array(buffer);
-
-  let binary = "";
-
-  const chunkSize =
-    0x8000;
-
-  for (
-    let i = 0;
-    i < bytes.length;
-    i += chunkSize
-  ) {
-
-    const chunk =
-      bytes.subarray(
-        i,
-        i + chunkSize
-      );
-
-    binary +=
-      String.fromCharCode(
-        ...chunk
-      );
-  }
-
-  return btoa(binary);
-}
-
-
-function base64ToArrayBuffer(base64) {
-
-  const binary =
-    atob(base64);
-
-  const bytes =
-    new Uint8Array(
-      binary.length
-    );
-
-  for (
-    let i = 0;
-    i < binary.length;
-    i++
-  ) {
-
-    bytes[i] =
-      binary.charCodeAt(i);
-
-  }
-
-  return bytes.buffer;
-}
-
-
-function stringToBase64(text) {
-
-  return arrayBufferToBase64(
-    new TextEncoder().encode(text)
-  );
-}
-
-
-function base64ToString(base64) {
-
-  return new TextDecoder().decode(
-    new Uint8Array(
-      base64ToArrayBuffer(base64)
-    )
-  );
-}
-
-
-/*
-  ============================================================
-  E2EE - PUBLIC KEY
-  ============================================================
-*/
-
-async function exportPublicKey(publicKey) {
-
-  const jwk =
-    await crypto.subtle.exportKey(
-      "jwk",
-      publicKey
-    );
-
-  return JSON.stringify(jwk);
-}
-
-
-async function importPublicKey(publicKeyString) {
-
-  const jwk =
-    JSON.parse(publicKeyString);
-
-  return crypto.subtle.importKey(
-    "jwk",
-    jwk,
-    {
-      name: "ECDH",
-      namedCurve: "P-256"
-    },
-    true,
-    []
-  );
-}
-
-
-/*
-  ============================================================
-  E2EE - KEY INITIALIZATION
-  ============================================================
-*/
-
-async function initializeEncryption() {
-
-  if (!currentUser) {
-    return false;
-  }
-
-  if (
-    !window.crypto ||
-    !window.crypto.subtle
-  ) {
-
-    throw new Error(
-      "Your browser does not support the Web Crypto API required for encrypted private chats."
-    );
-
-  }
-
-  const uid =
-    currentUser.uid;
-
-  let privateKey =
-    await loadPrivateKey(uid);
-
-
-  /*
-    Create a new identity when this browser
-    has never generated one for this account.
-  */
-
-  if (!privateKey) {
-
-    encryptionKeyPair =
-      await crypto.subtle.generateKey(
-        {
-          name: "ECDH",
-          namedCurve: "P-256"
-        },
-        true,
-        [
-          "deriveKey",
-          "deriveBits"
-        ]
-      );
-
-    await savePrivateKey(
-      uid,
-      encryptionKeyPair.privateKey
-    );
-
-    privateKey =
-      encryptionKeyPair.privateKey;
-
-    publicEncryptionKey =
-      encryptionKeyPair.publicKey;
-
-    const publicKeyString =
-      await exportPublicKey(
-        encryptionKeyPair.publicKey
-      );
-
-    await db.ref(
-      "users/" +
-      uid +
-      "/publicEncryptionKey"
-    ).set(
-      publicKeyString
-    );
-
-  } else {
-
-    /*
-      Existing local private key.
-      Load the matching public key.
-    */
-
-    const snapshot =
-      await db.ref(
-        "users/" +
-        uid +
-        "/publicEncryptionKey"
-      ).once("value");
-
-    let publicKeyString =
-      snapshot.val();
-
-
-    /*
-      If the public key was manually deleted,
-      create a replacement pair.
-    */
-
-    if (!publicKeyString) {
-
-      encryptionKeyPair =
-        await crypto.subtle.generateKey(
-          {
-            name: "ECDH",
-            namedCurve: "P-256"
-          },
-          true,
-          [
-            "deriveKey",
-            "deriveBits"
-          ]
-        );
-
-      await savePrivateKey(
-        uid,
-        encryptionKeyPair.privateKey
-      );
-
-      privateKey =
-        encryptionKeyPair.privateKey;
-
-      publicEncryptionKey =
-        encryptionKeyPair.publicKey;
-
-      publicKeyString =
-        await exportPublicKey(
-          encryptionKeyPair.publicKey
-        );
-
-      await db.ref(
-        "users/" +
-        uid +
-        "/publicEncryptionKey"
-      ).set(
-        publicKeyString
-      );
-
-    } else {
-
-      encryptionKeyPair = {
-
-        privateKey,
-
-        publicKey:
-          await importPublicKey(
-            publicKeyString
-          )
-
-      };
-
-      publicEncryptionKey =
-        encryptionKeyPair.publicKey;
-    }
-  }
-
-  encryptionInitialized =
-    true;
-
-  console.log(
-    "TeamSpace E2EE initialized."
-  );
-
-  return true;
-}
-
-
-/*
-  ============================================================
-  E2EE - DERIVE CHAT KEY
-  ============================================================
-*/
-
-async function deriveChatEncryptionKey(
-  recipientUid
-) {
-
-  if (!currentUser) {
-
-    throw new Error(
-      "You are not signed in."
-    );
-
-  }
-
-  if (!encryptionKeyPair) {
-    await initializeEncryption();
-  }
-
-  const recipientSnapshot =
-    await db.ref(
-      "users/" +
-      recipientUid +
-      "/publicEncryptionKey"
-    ).once("value");
-
-  const recipientPublicKeyString =
-    recipientSnapshot.val();
-
-  if (!recipientPublicKeyString) {
-
-    throw new Error(
-      "This user has not initialized encrypted messaging yet. Ask them to sign in to TeamSpace first."
-    );
-
-  }
-
-  const recipientPublicKey =
-    await importPublicKey(
-      recipientPublicKeyString
-    );
-
-  const sharedSecret =
-    await crypto.subtle.deriveBits(
-      {
-        name: "ECDH",
-        public: recipientPublicKey
-      },
-      encryptionKeyPair.privateKey,
-      256
-    );
-
-  const hkdfKey =
-    await crypto.subtle.importKey(
-      "raw",
-      sharedSecret,
-      "HKDF",
-      false,
-      ["deriveKey"]
-    );
-
-  const chatId =
-    makeChatId(
-      currentUser.uid,
-      recipientUid
-    );
-
-  const salt =
-    await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(
-        "TeamSpace-E2EE:" +
-        chatId
-      )
-    );
-
-  return crypto.subtle.deriveKey(
-    {
-      name: "HKDF",
-      hash: "SHA-256",
-      salt,
-      info:
-        new TextEncoder().encode(
-          "TeamSpace private chat AES-256-GCM"
-        )
-    },
-    hkdfKey,
-    {
-      name: "AES-GCM",
-      length: 256
-    },
-    false,
-    [
-      "encrypt",
-      "decrypt"
-    ]
-  );
-}
-
-
-/*
-  ============================================================
-  E2EE - ENCRYPT TEXT
-  ============================================================
-*/
-
-async function encryptPrivateText(
-  text,
-  recipientUid
-) {
-
-  const key =
-    await deriveChatEncryptionKey(
-      recipientUid
-    );
-
-  const iv =
-    crypto.getRandomValues(
-      new Uint8Array(12)
-    );
-
-  const encodedText =
-    new TextEncoder().encode(text);
-
-  const encrypted =
-    await crypto.subtle.encrypt(
-      {
-        name: "AES-GCM",
-        iv
-      },
-      key,
-      encodedText
-    );
-
-  return {
-
-    encrypted: true,
-
-    iv:
-      arrayBufferToBase64(iv),
-
-    ciphertext:
-      arrayBufferToBase64(
-        encrypted
-      )
-
-  };
-}
-
-
-/*
-  ============================================================
-  E2EE - DECRYPT TEXT
-  ============================================================
-*/
-
-async function decryptPrivateText(
-  message,
-  senderUid
-) {
-
-  if (
-    !message ||
-    message.encrypted !== true
-  ) {
-
-    return message?.body || "";
-
-  }
-
-  try {
-
-    const key =
-      await deriveChatEncryptionKey(
-        senderUid
-      );
-
-    const iv =
-      new Uint8Array(
-        base64ToArrayBuffer(
-          message.iv
-        )
-      );
-
-    const ciphertext =
-      base64ToArrayBuffer(
-        message.ciphertext
-      );
-
-    const decrypted =
-      await crypto.subtle.decrypt(
-        {
-          name: "AES-GCM",
-          iv
-        },
-        key,
-        ciphertext
-      );
-
-    return new TextDecoder().decode(
-      decrypted
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Message decryption failed:",
-      error
-    );
-
-    return "🔒 Unable to decrypt this message";
-  }
-}
-
-
-/*
-  ============================================================
-  E2EE - PHOTO
-  ============================================================
-*/
-
-async function encryptPrivatePhoto(
-  dataUrl,
-  recipientUid
-) {
-
-  return encryptPrivateText(
-    dataUrl,
-    recipientUid
-  );
-}
-
-
-async function decryptPrivatePhoto(
-  message,
-  senderUid
-) {
-
-  return decryptPrivateText(
-    message,
-    senderUid
-  );
-}
-
-
-/*
-  ============================================================
-  GROUP HEADER
-  ============================================================
-*/
-
-function setGroupHeaderClickable(enabled) {
-
-  if (!chatHeaderInfo) {
-    return;
-  }
-
-  chatHeaderInfo.classList.toggle(
-    "group-header-clickable",
-    enabled
-  );
-
-  chatHeaderInfo.setAttribute(
-    "role",
-    enabled
-      ? "button"
-      : "region"
-  );
-
-  chatHeaderInfo.setAttribute(
-    "tabindex",
-    enabled
-      ? "0"
-      : "-1"
-  );
-}
-
-
-function openSelectedGroupDetails() {
-
-  if (!selectedGroup) {
-    return;
-  }
-
-  openGroupDetailsModal(
-    selectedGroup
-  );
-}
-
-
-if (chatHeaderInfo) {
-
-  chatHeaderInfo.addEventListener(
-    "click",
-    () => {
-
-      if (selectedGroup) {
-        openSelectedGroupDetails();
-      }
-
-    }
-  );
-
-  chatHeaderInfo.addEventListener(
-    "keydown",
-    event => {
-
-      if (
-        (
-          event.key === "Enter" ||
-          event.key === " "
-        ) &&
-        selectedGroup
-      ) {
-
-        event.preventDefault();
-
-        openSelectedGroupDetails();
-      }
-
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  WORKSPACE NAVIGATION
-  ============================================================
-*/
-
-function ensureWorkspaceNavigation() {
-
-  if (
-    !chatNav ||
-    !peopleNav ||
-    !groupsNav
-  ) {
-    return;
-  }
-
-  chatNav.classList.toggle(
-    "active",
-    currentWorkspace === "chat"
-  );
-
-  peopleNav.classList.toggle(
-    "active",
-    currentWorkspace === "people"
-  );
-
-  groupsNav.classList.toggle(
-    "active",
-    currentWorkspace === "groups"
-  );
-}
-
-
-/*
-  ============================================================
-  DYNAMIC STYLES
-  ============================================================
-*/
-
-function installDynamicStyles() {
-
-  if (
-    document.getElementById(
-      "teamspaceDynamicStyles"
-    )
-  ) {
-    return;
-  }
-
-  const style =
-    document.createElement("style");
-
-  style.id =
-    "teamspaceDynamicStyles";
+  const style = document.createElement("style");
+  style.id = "teamspaceDynamicStyles";
 
   style.textContent = `
+    .hidden { display: none !important; }
 
-    .hidden {
-      display: none !important;
+    /* -----------------------------------------------------
+       LAYOUT / MOBILE SCROLL FIX
+    ----------------------------------------------------- */
+
+    .sidebar {
+      display: flex !important;
+      flex-direction: column !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
     }
 
-    .group-header-clickable {
-      cursor: pointer;
+    .sidebar-top,
+    .sidebar > .sidebar-section:not(.contacts-section),
+    #profileCard {
+      flex: 0 0 auto !important;
     }
 
-    .group-header-clickable:hover {
-      background: rgba(31,94,255,.06);
+    .sidebar-section.contacts-section {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
     }
 
-    .message-bubble img {
-      max-width: 280px;
-      max-height: 360px;
-      border-radius: 12px;
-      display: block;
-      cursor: pointer;
-      object-fit: contain;
+    #userList {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior: contain !important;
+      touch-action: pan-y !important;
+      scrollbar-width: thin;
+      padding-right: 2px;
     }
 
-    .message-meta {
-      font-size: 11px;
-      opacity: .65;
-      margin-top: 5px;
+    #messages {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      scrollbar-width: thin;
+    }
+
+    .user-list-item,
+    .nav-item,
+    .account-btn,
+    .profile {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* -----------------------------------------------------
+       MESSAGE BUBBLES
+    ----------------------------------------------------- */
+
+    .message-row {
+      display: flex;
+      justify-content: flex-start;
+      padding: 3px 10px;
+    }
+
+    .message-row.mine {
+      justify-content: flex-end;
+    }
+
+    .message-bubble {
+      max-width: min(75%, 620px);
+      padding: 9px 12px;
+      border-radius: 14px;
+      background: rgba(127, 127, 127, .14);
+      overflow-wrap: anywhere;
+    }
+
+    .message-bubble.mine {
+      background: #1f5eff;
+      color: #ffffff;
+    }
+
+    .message-text {
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .message-sender {
       font-size: 12px;
       font-weight: 700;
       margin-bottom: 4px;
+      opacity: .8;
     }
 
-    .message {
-      margin-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .message.mine {
-      align-items: flex-end;
-    }
-
-    .message.theirs {
-      align-items: flex-start;
-    }
-
-    .message-bubble {
-      max-width: min(75%, 650px);
-      padding: 10px 13px;
-      border-radius: 15px;
-      word-wrap: break-word;
-      overflow-wrap: anywhere;
-    }
-
-    .message.mine .message-bubble {
-      background: #1f5eff;
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .message.theirs .message-bubble {
-      background: #eeeeee;
-      color: #111;
-      border-bottom-left-radius: 4px;
-    }
-
-    body.dark .message.theirs .message-bubble {
-      background: #252a35;
-      color: #fff;
-    }
-
-    .e2ee-indicator {
-      font-size: 10px;
-      opacity: .65;
-      margin-top: 4px;
-    }
-
-    .empty-chat {
-      height: 100%;
+    .message-meta {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    .message-time {
+      font-size: 10px;
+      opacity: .7;
+    }
+
+    .message-ticks {
+      display: inline-block;
+      font-size: 12px;
+      line-height: 1;
+      letter-spacing: -2px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .85);
+    }
+
+    .message-row:not(.mine) .message-ticks {
+      color: #8a8a8a;
+    }
+
+    .message-ticks.read {
+      color: #9ad8ff;
+    }
+
+    .message-date-divider {
       text-align: center;
-      padding: 30px;
+      margin: 14px 0;
+      font-size: 11px;
+      opacity: .6;
+    }
+
+    .chat-image {
+      display: block;
+      max-width: min(100%, 360px);
+      max-height: 400px;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
+    .image-name {
+      margin-top: 5px;
+      font-size: 11px;
       opacity: .75;
     }
 
-    .user-row,
-    .group-row {
+    .message-error {
+      font-size: 12px;
+      opacity: .85;
+    }
+
+    /* -----------------------------------------------------
+       LISTS
+    ----------------------------------------------------- */
+
+    .empty-list {
+      padding: 20px;
+      text-align: center;
+      opacity: .65;
+    }
+
+    .user-list-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
       cursor: pointer;
     }
 
-    .security-note {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      background: rgba(31,94,255,.08);
+    .user-list-item:hover,
+    .user-list-item.active {
+      background: rgba(31, 94, 255, .12);
     }
 
-    .modal-backdrop {
+    .user-list-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .user-list-text strong,
+    .user-list-text span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-list-text span {
+      font-size: 12px;
+      opacity: .65;
+    }
+
+    /* -----------------------------------------------------
+       AVATARS
+    ----------------------------------------------------- */
+
+    .profile-photo-small {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .avatar-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1f5eff;
+      color: #ffffff;
+      font-weight: 700;
+      overflow: hidden;
+    }
+
+    /* -----------------------------------------------------
+       PRESENCE
+    ----------------------------------------------------- */
+
+    .online-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+      background: #999999;
+    }
+
+    .online-dot.online {
+      background: #20c55a;
+    }
+
+    /* -----------------------------------------------------
+       GROUP CREATE BUTTON
+    ----------------------------------------------------- */
+
+    .teamspace-group-button {
+      width: 100%;
+      margin: 0 0 10px;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      background: #1f5eff;
+      color: #ffffff;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .teamspace-group-button:hover { opacity: .92; }
+    .teamspace-group-button:active { transform: scale(.98); }
+
+    /* -----------------------------------------------------
+       ERROR / SUCCESS
+    ----------------------------------------------------- */
+
+    .error { color: #d83a3a; }
+    .success { color: #1fa463; }
+
+    /* -----------------------------------------------------
+       DYNAMIC MODALS
+    ----------------------------------------------------- */
+
+    .teamspace-modal {
       position: fixed;
       inset: 0;
-      z-index: 9999;
-      background: rgba(0,0,0,.55);
+      z-index: 10000;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
     }
 
-    .teamspace-modal {
-      width: min(520px, 100%);
-      max-height: 90vh;
+    .teamspace-modal .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .teamspace-modal .modal-card {
+      position: relative;
+      z-index: 1;
+      width: min(92vw, 520px);
+      max-height: 88vh;
       overflow: auto;
-      background: white;
-      color: #111;
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 20px 70px rgba(0,0,0,.3);
+      border-radius: 16px;
+      background: #ffffff;
+      color: #111827;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .28);
+      scrollbar-width: thin;
     }
 
-    body.dark .teamspace-modal {
-      background: #181b22;
-      color: #fff;
+    .teamspace-modal .modal-header,
+    .teamspace-modal .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(127, 127, 127, .18);
     }
 
-    .modal-close {
-      float: right;
+    .teamspace-modal .modal-footer {
+      border-top: 1px solid rgba(127, 127, 127, .18);
+      border-bottom: 0;
+      justify-content: flex-end;
+    }
+
+    .teamspace-modal .modal-body { padding: 20px; }
+
+    .teamspace-modal .modal-header h2 { margin: 0; font-size: 18px; }
+
+    .teamspace-modal .modal-close {
       border: 0;
       background: transparent;
-      font-size: 22px;
+      font-size: 28px;
+      line-height: 1;
       cursor: pointer;
+      color: inherit;
     }
 
-    .modal-field {
-      margin: 14px 0;
-    }
-
-    .modal-field label {
+    .teamspace-modal label {
       display: block;
-      margin-bottom: 6px;
+      margin: 12px 0 6px;
       font-weight: 600;
+      font-size: 13px;
     }
 
-    .modal-field input {
+    .teamspace-modal input,
+    .teamspace-modal textarea,
+    .teamspace-modal select {
       width: 100%;
       box-sizing: border-box;
-      padding: 11px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
+      padding: 10px 12px;
+      border: 1px solid rgba(127, 127, 127, .3);
+      border-radius: 9px;
+      background: transparent;
+      color: inherit;
+      outline: none;
+      font: inherit;
     }
 
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 18px;
+    .teamspace-modal textarea {
+      min-height: 90px;
+      resize: vertical;
     }
 
-    .modal-actions button {
-      flex: 1;
-      padding: 11px;
+    .teamspace-modal button {
       border: 0;
-      border-radius: 10px;
+      border-radius: 9px;
+      padding: 9px 14px;
       cursor: pointer;
+      font: inherit;
     }
 
-    .security-lock {
-      margin-right: 5px;
+    body.dark .teamspace-modal .modal-card,
+    body.dark-mode .teamspace-modal .modal-card {
+      background: #1b2130;
+      color: #e8edf7;
     }
 
-    @media(max-width:700px) {
+    .group-admin-controls select { margin-bottom: 8px; }
 
-      .message-bubble {
-        max-width: 85%;
+    .profile-modal-avatar.avatar-fallback {
+      background: linear-gradient(135deg, #2563eb, #d4a017);
+    }
+
+    @media (max-width: 700px) {
+      .message-bubble { max-width: 86%; }
+    }
+
+    /* -----------------------------------------------------
+       MOBILE: extra scroll safety
+    ----------------------------------------------------- */
+
+    @media (max-width: 760px) {
+      .sidebar {
+        height: 46dvh !important;
+        max-height: 46dvh !important;
       }
 
-      .message-bubble img {
-        max-width: 230px;
+      .chat-area {
+        height: 54dvh !important;
       }
 
+      #userList,
+      #messages {
+        -webkit-overflow-scrolling: touch;
+      }
     }
 
+    @media (max-width: 480px) {
+      .sidebar {
+        height: 48dvh !important;
+        max-height: 48dvh !important;
+      }
+
+      .chat-area {
+        height: 52dvh !important;
+      }
+    }
   `;
 
   document.head.appendChild(style);
 }
 
+/* =========================================================
+   BASIC HELPERS
+   ========================================================= */
 
-/*
-  ============================================================
-  DARK MODE
-  ============================================================
-*/
+function initials(name) {
+  if (!name) return "?";
+
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+
+  if (!parts.length) return "?";
+
+  if (parts.length === 1) {
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatTime(timestamp) {
+  if (!timestamp) return "";
+
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDate(timestamp) {
+  if (!timestamp) return "";
+
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function formatLastSeen(timestamp) {
+  if (!timestamp) return "Last seen unavailable";
+
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "Last seen unavailable";
+
+  return `Last seen ${formatDate(timestamp)} at ${formatTime(timestamp)}`;
+}
+
+function setAuthError(message) {
+  if (!authError) return;
+  authError.textContent = message || "";
+}
+
+function firebaseError(error) {
+  if (!error) return "Something went wrong.";
+
+  const code = error.code || "";
+
+  const messages = {
+    "auth/email-already-in-use": "This email address is already registered.",
+    "auth/invalid-email": "Please enter a valid email address.",
+    "auth/weak-password": "Password should be at least 6 characters.",
+    "auth/user-not-found": "No account was found with this email.",
+    "auth/wrong-password": "Incorrect password.",
+    "auth/invalid-credential": "Incorrect email or password.",
+    "auth/too-many-requests": "Too many attempts. Please wait and try again.",
+    "auth/network-request-failed": "Network error. Check your internet connection.",
+    "auth/requires-recent-login": "Please sign in again before deleting your account.",
+    "auth/user-disabled": "This account has been disabled.",
+    "PERMISSION_DENIED": "Permission denied. Check your database rules."
+  };
+
+  return messages[code] || error.message || "Something went wrong.";
+}
+
+function makeChatId(uid1, uid2) {
+  return [uid1, uid2].sort().join("_");
+}
+
+function showAuth() {
+  if (authScreen) authScreen.classList.remove("hidden");
+  if (appScreen) appScreen.classList.add("hidden");
+}
+
+function showApp() {
+  if (authScreen) authScreen.classList.add("hidden");
+  if (appScreen) appScreen.classList.remove("hidden");
+}
+
+function setUploadStatus(text) {
+  if (!uploadStatus) return;
+  uploadStatus.textContent = text || "";
+}
+
+/* =========================================================
+   THEME
+   ========================================================= */
 
 function applyTheme(theme) {
+  const dark = theme === "dark";
 
-  document.body.classList.toggle(
-    "dark",
-    theme === "dark"
-  );
+  document.documentElement.setAttribute("data-theme", theme);
+  document.body.classList.toggle("dark", dark);
+  document.body.classList.toggle("dark-mode", dark);
 
   if (themeToggle) {
-
-    themeToggle.textContent =
-      theme === "dark"
-        ? "☀️ Light"
-        : "🌙 Dark";
+    themeToggle.textContent = dark ? "☀️" : "🌙";
+    themeToggle.title = dark ? "Switch to light mode" : "Switch to dark mode";
+    themeToggle.setAttribute("aria-pressed", dark ? "true" : "false");
   }
 }
-
 
 function initializeTheme() {
+  const saved = localStorage.getItem("teamspaceTheme");
 
-  const savedTheme =
-    localStorage.getItem(
-      "teamspaceTheme"
-    );
-
-  applyTheme(
-    savedTheme || "light"
-  );
-}
-
-
-if (themeToggle) {
-
-  themeToggle.addEventListener(
-    "click",
-    () => {
-
-      const dark =
-        document.body.classList.contains(
-          "dark"
-        );
-
-      const nextTheme =
-        dark
-          ? "light"
-          : "dark";
-
-      localStorage.setItem(
-        "teamspaceTheme",
-        nextTheme
-      );
-
-      applyTheme(nextTheme);
-
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  LISTENER CLEANUP
-  ============================================================
-*/
-
-function clearMessageListener() {
-
-  if (
-    messageListener &&
-    activeMessagePath
-  ) {
-
-    db.ref(
-      activeMessagePath
-    ).off(
-      "value",
-      messageListener
-    );
+  if (saved === "dark" || saved === "light") {
+    applyTheme(saved);
+    return;
   }
 
-  messageListener = null;
+  const prefersDark =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  applyTheme(prefersDark ? "dark" : "light");
+}
+
+if (themeToggle) {
+  themeToggle.addEventListener("click", function () {
+    const isDark = document.body.classList.contains("dark");
+    const next = isDark ? "light" : "dark";
+
+    localStorage.setItem("teamspaceTheme", next);
+    applyTheme(next);
+  });
+}
+
+/* =========================================================
+   IMAGE COMPRESSION
+   ========================================================= */
+
+function compressImage(file, maxDimension, quality) {
+  maxDimension = maxDimension || 1000;
+  quality = quality || 0.72;
+
+  return new Promise(function (resolve, reject) {
+    if (!file) {
+      reject(new Error("No image selected."));
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+      const image = new Image();
+
+      image.onload = function () {
+        let width = image.width;
+        let height = image.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          const ratio = Math.min(maxDimension / width, maxDimension / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, width, height);
+
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+
+      image.onerror = function () {
+        reject(new Error("Unable to read image."));
+      };
+
+      image.src = event.target.result;
+    };
+
+    reader.onerror = function () {
+      reject(new Error("Unable to read selected file."));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+/* =========================================================
+   AUTHENTICATION UI
+   ========================================================= */
+
+function setAuthMode(mode) {
+  authMode = mode === "register" ? "register" : "login";
+
+  if (loginTab) loginTab.classList.toggle("active", authMode === "login");
+  if (registerTab) registerTab.classList.toggle("active", authMode === "register");
+
+  if (nameGroup) nameGroup.classList.toggle("hidden", authMode !== "register");
+
+  if (authSubmit) {
+    authSubmit.textContent = authMode === "register" ? "Create account" : "Sign in";
+  }
+
+  if (forgotPassword) {
+    forgotPassword.classList.toggle("hidden", authMode !== "login");
+  }
+
+  setAuthError("");
+}
+
+if (loginTab) {
+  loginTab.addEventListener("click", function () {
+    setAuthMode("login");
+  });
+}
+
+if (registerTab) {
+  registerTab.addEventListener("click", function () {
+    setAuthMode("register");
+  });
+}
+
+if (forgotPassword) {
+  forgotPassword.addEventListener("click", async function () {
+    const email = authEmail && authEmail.value.trim();
+
+    if (!email) {
+      setAuthError("Enter your email address first, then tap Forgot password.");
+      if (authEmail) authEmail.focus();
+      return;
+    }
+
+    const originalText = forgotPassword.textContent;
+
+    try {
+      forgotPassword.disabled = true;
+      forgotPassword.textContent = "Sending…";
+
+      await auth.sendPasswordResetEmail(email);
+
+      setAuthError("Password reset email sent. Check your inbox.");
+    } catch (error) {
+      console.error(error);
+      setAuthError(firebaseError(error));
+    } finally {
+      forgotPassword.disabled = false;
+      forgotPassword.textContent = originalText;
+    }
+  });
+}
+
+if (authForm) {
+  authForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const email = (authEmail && authEmail.value.trim()) || "";
+    const password = (authPassword && authPassword.value) || "";
+    const name = (authName && authName.value.trim()) || "";
+
+    if (!email || !password) {
+      setAuthError("Please enter your email and password.");
+      return;
+    }
+
+    try {
+      if (authMode === "register") {
+        if (!name) {
+          setAuthError("Please enter your name.");
+          return;
+        }
+
+        if (password.length < 6) {
+          setAuthError("Password should be at least 6 characters.");
+          return;
+        }
+      }
+
+      if (authSubmit) authSubmit.disabled = true;
+
+      if (authMode === "register") {
+        const credential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = credential.user;
+
+        await user.updateProfile({ displayName: name });
+
+        await db.ref(`users/${user.uid}`).update({
+          uid: user.uid,
+          name: name,
+          email: email,
+          photoURL: "",
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        setAuthError("Account created successfully.");
+      } else {
+        await auth.signInWithEmailAndPassword(email, password);
+      }
+    } catch (error) {
+      console.error(error);
+      setAuthError(firebaseError(error));
+    } finally {
+      if (authSubmit) authSubmit.disabled = false;
+    }
+  });
+}
+
+/* =========================================================
+   LISTENER CLEANUP
+   ========================================================= */
+
+function stopMessageListener() {
+  if (messageListener) {
+    try {
+      messageListener.ref.off("value", messageListener.callback);
+    } catch (error) {
+      console.warn(error);
+    }
+    messageListener = null;
+  }
+
   activeMessagePath = null;
 }
 
+function stopUsersListener() {
+  if (usersListener) {
+    try {
+      db.ref("users").off("value", usersListener);
+    } catch (error) {
+      console.warn(error);
+    }
+    usersListener = null;
+  }
+}
+
+function stopGroupsListener() {
+  if (groupsListener) {
+    try {
+      db.ref("groups").off("value", groupsListener);
+    } catch (error) {
+      console.warn(error);
+    }
+    groupsListener = null;
+  }
+}
 
 function clearSelectedPresenceListener() {
-
-  if (
-    selectedPresenceRef &&
-    selectedPresenceCallback
-  ) {
-
-    selectedPresenceRef.off(
-      "value",
-      selectedPresenceCallback
-    );
+  if (selectedPresenceRef && selectedPresenceCallback) {
+    try {
+      selectedPresenceRef.off("value", selectedPresenceCallback);
+    } catch (error) {
+      console.warn(error);
+    }
   }
 
   selectedPresenceRef = null;
   selectedPresenceCallback = null;
+  selectedUserOnline = false;
 }
-
-
-function clearPresenceListeners() {
-
-  clearSelectedPresenceListener();
-}
-
-
-function clearAllListeners() {
-
-  clearMessageListener();
-  clearPresenceListeners();
-
-  if (usersListener) {
-
-    db.ref("users").off(
-      "value",
-      usersListener
-    );
-  }
-
-  if (groupsListener) {
-
-    db.ref("groups").off(
-      "value",
-      groupsListener
-    );
-  }
-
-  usersListener = null;
-  groupsListener = null;
-}
-
-
-/*
-  ============================================================
-  EMPTY CHAT
-  ============================================================
-*/
-
-function renderEmptyChat(
-  title,
-  description
-) {
-
-  if (!messagesBox) {
-    return;
-  }
-
-  messagesBox.innerHTML = `
-
-    <div class="empty-chat">
-
-      <div>
-
-        <h2>
-          ${escapeHtml(title)}
-        </h2>
-
-        <p>
-          ${escapeHtml(description)}
-        </p>
-
-      </div>
-
-    </div>
-
-  `;
-}
-
-
-/*
-  ============================================================
-  PROFILE PHOTO
-  ============================================================
-*/
-
-function getProfilePhoto(profile) {
-
-  return (
-    profile?.photoUrl ||
-    profile?.photo ||
-    ""
-  );
-}
-
-
-function setAvatarElement(
-  element,
-  profile,
-  fallbackName
-) {
-
-  if (!element) {
-    return;
-  }
-
-  const photo =
-    getProfilePhoto(profile);
-
-  if (photo) {
-
-    element.innerHTML = `
-
-      <img
-        src="${String(photo).replaceAll('"', "&quot;")}"
-        alt="${escapeHtml(
-          fallbackName ||
-          profile?.name ||
-          "User"
-        )}"
-      >
-
-    `;
-
-  } else {
-
-    element.textContent =
-      initials(
-        fallbackName ||
-        profile?.name
-      );
-  }
-}
-
-
-function updateProfileUI() {
-
-  if (!currentUser) {
-    return;
-  }
-
-  const name =
-    currentProfile?.name ||
-    currentUser.displayName ||
-    currentUser.email ||
-    "User";
-
-  const profileAvatar =
-    document.getElementById(
-      "profileAvatar"
-    );
-
-  const profileName =
-    document.getElementById(
-      "profileName"
-    );
-
-  const profileEmail =
-    document.getElementById(
-      "profileEmail"
-    );
-
-  setAvatarElement(
-    profileAvatar,
-    currentProfile,
-    name
-  );
-
-  if (profileName) {
-    profileName.textContent = name;
-  }
-
-  if (profileEmail) {
-    profileEmail.textContent =
-      currentUser.email || "";
-  }
-}
-
-
-function attachOwnProfileClick() {
-
-  const ownProfile =
-    document.getElementById(
-      "ownProfile"
-    );
-
-  if (!ownProfile) {
-    return;
-  }
-
-  if (
-    ownProfile.dataset.attached ===
-    "true"
-  ) {
-    return;
-  }
-
-  ownProfile.dataset.attached =
-    "true";
-
-  ownProfile.addEventListener(
-    "click",
-    openOwnProfileModal
-  );
-
-  ownProfile.addEventListener(
-    "keydown",
-    event => {
-
-      if (
-        event.key === "Enter" ||
-        event.key === " "
-      ) {
-
-        event.preventDefault();
-
-        openOwnProfileModal();
-      }
-
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  MODALS
-  ============================================================
-*/
-
-function removeTeamspaceModal() {
-
-  document
-    .querySelectorAll(
-      ".modal-backdrop"
-    )
-    .forEach(
-      element => element.remove()
-    );
-}
-
-
-function createModal(
-  title,
-  content
-) {
-
-  removeTeamspaceModal();
-
-  const backdrop =
-    document.createElement("div");
-
-  backdrop.className =
-    "modal-backdrop";
-
-  const modal =
-    document.createElement("div");
-
-  modal.className =
-    "teamspace-modal";
-
-  modal.innerHTML = `
-
-    <button
-      class="modal-close"
-      type="button"
-      aria-label="Close"
-    >
-      ×
-    </button>
-
-    <h2>
-      ${escapeHtml(title)}
-    </h2>
-
-    <div>
-      ${content}
-    </div>
-
-  `;
-
-  backdrop.appendChild(modal);
-  document.body.appendChild(backdrop);
-
-  const close =
-    modal.querySelector(
-      ".modal-close"
-    );
-
-  close?.addEventListener(
-    "click",
-    removeTeamspaceModal
-  );
-
-  backdrop.addEventListener(
-    "click",
-    event => {
-
-      if (event.target === backdrop) {
-        removeTeamspaceModal();
-      }
-
-    }
-  );
-
-  return modal;
-}
-
-
-/*
-  ============================================================
-  PHOTO COMPRESSION
-  ============================================================
-*/
-
-function compressImage(file) {
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const reader =
-        new FileReader();
-
-      reader.onload =
-        event => {
-
-          const image =
-            new Image();
-
-          image.onload =
-            () => {
-
-              const maxWidth = 900;
-              const maxHeight = 900;
-
-              let width =
-                image.width;
-
-              let height =
-                image.height;
-
-              if (
-                width > maxWidth ||
-                height > maxHeight
-              ) {
-
-                const ratio =
-                  Math.min(
-                    maxWidth / width,
-                    maxHeight / height
-                  );
-
-                width =
-                  Math.round(
-                    width * ratio
-                  );
-
-                height =
-                  Math.round(
-                    height * ratio
-                  );
-              }
-
-              const canvas =
-                document.createElement(
-                  "canvas"
-                );
-
-              canvas.width = width;
-              canvas.height = height;
-
-              const context =
-                canvas.getContext("2d");
-
-              if (!context) {
-
-                reject(
-                  new Error(
-                    "Your browser does not support image compression."
-                  )
-                );
-
-                return;
-              }
-
-              context.fillStyle =
-                "#ffffff";
-
-              context.fillRect(
-                0,
-                0,
-                width,
-                height
-              );
-
-              context.drawImage(
-                image,
-                0,
-                0,
-                width,
-                height
-              );
-
-              let quality = 0.78;
-
-              let dataUrl =
-                canvas.toDataURL(
-                  "image/jpeg",
-                  quality
-                );
-
-              const maxBytes =
-                450 * 1024;
-
-              while (
-                dataUrl.length > maxBytes &&
-                quality > 0.35
-              ) {
-
-                quality -= 0.07;
-
-                dataUrl =
-                  canvas.toDataURL(
-                    "image/jpeg",
-                    quality
-                  );
-              }
-
-              resolve({
-
-                dataUrl,
-
-                width:
-                  canvas.width,
-
-                height:
-                  canvas.height,
-
-                size:
-                  dataUrl.length
-
-              });
-
-            };
-
-          image.onerror =
-            () => {
-
-              reject(
-                new Error(
-                  "The selected image could not be opened."
-                )
-              );
-
-            };
-
-          image.src =
-            event.target.result;
-        };
-
-      reader.onerror =
-        () => {
-
-          reject(
-            new Error(
-              "Unable to read the selected photo."
-            )
-          );
-
-        };
-
-      reader.readAsDataURL(file);
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  IMAGE VIEWER
-  ============================================================
-*/
-
-function openImageViewer(
-  imageUrl,
-  imageName
-) {
-
-  const newWindow =
-    window.open(
-      "",
-      "_blank"
-    );
-
-  if (!newWindow) {
-    return;
-  }
-
-  const safeUrl =
-    String(
-      imageUrl || ""
-    ).replaceAll(
-      '"',
-      "&quot;"
-    );
-
-  const safeName =
-    escapeHtml(
-      imageName ||
-      "TeamSpace Photo"
-    );
-
-  newWindow.document.write(
-    `
-    <!DOCTYPE html>
-
-    <html>
-
-    <head>
-
-      <title>${safeName}</title>
-
-      <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-      >
-
-      <style>
-
-        html,
-        body {
-          margin: 0;
-          width: 100%;
-          min-height: 100%;
-          background: #111;
-        }
-
-        body {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        }
-
-        img {
-          max-width: 96vw;
-          max-height: 96vh;
-          width: auto;
-          height: auto;
-          object-fit: contain;
-        }
-
-      </style>
-
-    </head>
-
-    <body>
-
-      <img
-        src="${safeUrl}"
-        alt="${safeName}"
-      >
-
-    </body>
-
-    </html>
-    `
-  );
-
-  newWindow.document.close();
-}
-
-
-/*
-  ============================================================
-  OWN PROFILE MODAL
-  ============================================================
-*/
-
-async function openOwnProfileModal() {
-
-  if (!currentUser) {
-    return;
-  }
-
-  const modal =
-    createModal(
-      "My Profile",
-      `
-        <div class="modal-field">
-
-          <label>
-            Name
-          </label>
-
-          <input
-            id="profileEditName"
-            type="text"
-            maxlength="100"
-            value="${escapeHtml(
-              currentProfile?.name || ""
-            )}"
-          >
-
-        </div>
-
-        <div class="modal-field">
-
-          <label>
-            Profile photo
-          </label>
-
-          <input
-            id="profileEditPhoto"
-            type="file"
-            accept="image/*"
-          >
-
-        </div>
-
-        <div class="security-note">
-
-          🔒 Private messages are
-          end-to-end encrypted
-          on this browser.
-
-        </div>
-
-        <div class="modal-actions">
-
-          <button
-            id="profileCancel"
-            type="button"
-          >
-            Cancel
-          </button>
-
-          <button
-            id="profileSave"
-            type="button"
-          >
-            Save
-          </button>
-
-        </div>
-      `
-    );
-
-  modal
-    .querySelector(
-      "#profileCancel"
-    )
-    ?.addEventListener(
-      "click",
-      removeTeamspaceModal
-    );
-
-  modal
-    .querySelector(
-      "#profileSave"
-    )
-    ?.addEventListener(
-      "click",
-      async () => {
-
-        const saveButton =
-          modal.querySelector(
-            "#profileSave"
-          );
-
-        const name =
-          modal
-            .querySelector(
-              "#profileEditName"
-            )
-            ?.value
-            .trim();
-
-        const photoFile =
-          modal
-            .querySelector(
-              "#profileEditPhoto"
-            )
-            ?.files?.[0];
-
-        if (!name) {
-
-          alert(
-            "Please enter your name."
-          );
-
-          return;
-        }
-
-        saveButton.disabled = true;
-        saveButton.textContent =
-          "Saving...";
-
-        try {
-
-          const updates = {
-
-            name,
-
-            email:
-              currentUser.email,
-
-            uid:
-              currentUser.uid
-
-          };
-
-          if (photoFile) {
-
-            const compressed =
-              await compressImage(
-                photoFile
-              );
-
-            updates.photoUrl =
-              compressed.dataUrl;
-
-          } else if (
-            currentProfile?.photoUrl
-          ) {
-
-            updates.photoUrl =
-              currentProfile.photoUrl;
-
-          }
-
-          await db.ref(
-            "users/" +
-            currentUser.uid
-          ).update(updates);
-
-          await currentUser.updateProfile({
-            displayName: name
-          });
-
-          currentProfile = {
-            ...currentProfile,
-            ...updates
-          };
-
-          updateProfileUI();
-
-          removeTeamspaceModal();
-
-        } catch (error) {
-
-          console.error(
-            "Profile update error:",
-            error
-          );
-
-          alert(
-            firebaseError(error)
-          );
-
-        } finally {
-
-          saveButton.disabled =
-            false;
-
-          saveButton.textContent =
-            "Save";
-        }
-
-      }
-    );
-}
-
-
-/*
-  ============================================================
-  OTHER USER PROFILE
-  ============================================================
-*/
-
-function openUserProfileModal(user) {
-
-  if (!user) {
-    return;
-  }
-
-  createModal(
-    user.name || "User Profile",
-
-    `
-      <div
-        style="
-          text-align:center;
-          margin-bottom:20px;
-        "
-      >
-
-        <div
-          class="avatar"
-          style="
-            width:80px;
-            height:80px;
-            margin:0 auto 12px;
-          "
-          id="otherProfileAvatar"
-        ></div>
-
-        <h3>
-          ${escapeHtml(
-            user.name || "User"
-          )}
-        </h3>
-
-        <p>
-          ${escapeHtml(
-            user.email || ""
-          )}
-        </p>
-
-      </div>
-
-      <div id="profilePresenceArea">
-        Loading presence...
-      </div>
-    `
-  );
-
-  const avatar =
-    document.getElementById(
-      "otherProfileAvatar"
-    );
-
-  setAvatarElement(
-    avatar,
-    user,
-    user.name
-  );
-
-  listenToUserPresence(
-    user.uid,
-    document.getElementById(
-      "profilePresenceArea"
-    )
-  );
-}
-
-
-/*
-  ============================================================
-  PRESENCE
-  ============================================================
-*/
-
-function startPresence() {
-
-  if (!currentUser) {
-    return;
-  }
-
-  const uid =
-    currentUser.uid;
-
-  presenceConnectionRef =
-    db.ref(".info/connected");
-
-  presenceConnectionCallback =
-    snapshot => {
-
-      if (
-        snapshot.val() !== true
-      ) {
-        return;
-      }
-
-      const userPresenceRef =
-        db.ref(
-          "presence/" +
-          uid
-        );
-
-      userPresenceRef
-        .onDisconnect()
-        .set({
-
-          state:
-            "offline",
-
-          lastChanged:
-            firebase.database
-              .ServerValue.TIMESTAMP
-
-        });
-
-      userPresenceRef.set({
-
-        state:
-          "online",
-
-        lastChanged:
-          firebase.database
-            .ServerValue.TIMESTAMP
-
-      });
-
-    };
-
-  presenceConnectionRef.on(
-    "value",
-    presenceConnectionCallback
-  );
-}
-
-
-async function markCurrentUserOffline() {
-
-  if (!currentUser) {
-    return;
-  }
-
-  try {
-
-    await db.ref(
-      "presence/" +
-      currentUser.uid
-    ).set({
-
-      state:
-        "offline",
-
-      lastChanged:
-        firebase.database
-          .ServerValue.TIMESTAMP
-
-    });
-
-  } catch (error) {
-
-    console.warn(
-      "Unable to mark offline:",
-      error
-    );
-
-  }
-}
-
 
 function stopPresenceListener() {
-
-  if (
-    presenceConnectionRef &&
-    presenceConnectionCallback
-  ) {
-
-    presenceConnectionRef.off(
-      "value",
-      presenceConnectionCallback
-    );
-  }
-
-  presenceConnectionRef = null;
-  presenceConnectionCallback = null;
-}
-
-
-function listenToUserPresence(
-  uid,
-  targetElement
-) {
-
-  if (!targetElement) {
-    return;
-  }
-
-  const ref =
-    db.ref(
-      "presence/" +
-      uid
-    );
-
-  const callback =
-    snapshot => {
-
-      const presence =
-        snapshot.val();
-
-      if (
-        presence?.state ===
-        "online"
-      ) {
-
-        targetElement.innerHTML = `
-
-          <div
-            style="
-              color:#16a34a;
-              font-weight:600;
-            "
-          >
-            ● Online
-          </div>
-
-        `;
-
-      } else {
-
-        targetElement.innerHTML = `
-
-          <div>
-            ${escapeHtml(
-              formatLastSeen(
-                presence?.lastChanged
-              )
-            )}
-          </div>
-
-        `;
-      }
-    };
-
-  clearSelectedPresenceListener();
-
-  selectedPresenceRef = ref;
-  selectedPresenceCallback = callback;
-
-  ref.on(
-    "value",
-    callback
-  );
-}
-
-
-/*
-  ============================================================
-  CREATE GROUP INTERFACE
-  ============================================================
-*/
-
-function createGroupInterface() {
-
-  let button =
-    document.getElementById(
-      "createGroupButton"
-    );
-
-  if (!button) {
-
-    const parent =
-      document.querySelector(
-        ".sidebar-actions"
-      );
-
-    if (parent) {
-
-      button =
-        document.createElement(
-          "button"
-        );
-
-      button.id =
-        "createGroupButton";
-
-      button.type =
-        "button";
-
-      button.textContent =
-        "+";
-
-      button.title =
-        "Create group";
-
-      parent.appendChild(
-        button
-      );
+  if (presenceConnectedRef && presenceCallback) {
+    try {
+      presenceConnectedRef.off("value", presenceCallback);
+    } catch (error) {
+      console.warn(error);
     }
   }
 
-  if (
-    button &&
-    button.dataset.attached !==
-    "true"
-  ) {
-
-    button.dataset.attached =
-      "true";
-
-    button.addEventListener(
-      "click",
-      openCreateGroupModal
-    );
-  }
-}
-
-
-function openCreateGroupModal() {
-
-  createModal(
-    "Create Group",
-
-    `
-      <div class="modal-field">
-
-        <label>
-          Group name
-        </label>
-
-        <input
-          id="newGroupName"
-          type="text"
-          maxlength="80"
-          placeholder="e.g. Development Team"
-        >
-
-      </div>
-
-      <div class="modal-actions">
-
-        <button
-          id="cancelCreateGroup"
-          type="button"
-        >
-          Cancel
-        </button>
-
-        <button
-          id="confirmCreateGroup"
-          type="button"
-        >
-          Create Group
-        </button>
-
-      </div>
-    `
-  );
-
-  document
-    .getElementById(
-      "cancelCreateGroup"
-    )
-    ?.addEventListener(
-      "click",
-      removeTeamspaceModal
-    );
-
-  document
-    .getElementById(
-      "confirmCreateGroup"
-    )
-    ?.addEventListener(
-      "click",
-      createGroup
-    );
-}
-
-
-async function createGroup() {
-
-  if (!currentUser) {
-    return;
+  if (presenceRef) {
+    try {
+      presenceRef.onDisconnect().cancel();
+    } catch (error) {
+      /* ignore */
+    }
   }
 
-  const input =
-    document.getElementById(
-      "newGroupName"
-    );
+  presenceConnectedRef = null;
+  presenceCallback = null;
+}
 
-  const button =
-    document.getElementById(
-      "confirmCreateGroup"
-    );
+function clearAllListeners() {
+  stopMessageListener();
+  stopUsersListener();
+  stopGroupsListener();
+  clearSelectedPresenceListener();
+  stopPresenceListener();
+}
+
+/* =========================================================
+   CHAT AREA HELPERS
+   ========================================================= */
+
+function renderEmptyChat(title, subtitle) {
+  if (!messages) return;
+
+  messages.innerHTML = `
+    <div class="empty-chat">
+      <div class="empty-icon">💬</div>
+      <h2>${escapeHtml(title || "Your conversations")}</h2>
+      <p>${escapeHtml(subtitle || "Select a conversation to start messaging.")}</p>
+    </div>
+  `;
+}
+
+function updateCurrentUserUI() {
+  const profile = currentProfile || {};
 
   const name =
-    input?.value.trim();
+    profile.name ||
+    (currentUser && currentUser.displayName) ||
+    "User";
 
-  if (!name) {
+  const email =
+    profile.email ||
+    (currentUser && currentUser.email) ||
+    "";
 
-    alert(
-      "Enter a group name."
-    );
+  if (currentUserName) currentUserName.textContent = name;
+  if (currentUserEmail) currentUserEmail.textContent = email;
 
-    return;
+  if (currentUserAvatar) {
+    const photoURL =
+      profile.photoURL ||
+      (currentUser && currentUser.photoURL) ||
+      "";
+
+    if (photoURL) {
+      currentUserAvatar.innerHTML =
+        `<img src="${escapeHtml(photoURL)}" alt="${escapeHtml(name)}">`;
+    } else {
+      currentUserAvatar.textContent = initials(name);
+    }
   }
+}
 
-  if (name.length > 80) {
+/* =========================================================
+   PRESENCE
+   ========================================================= */
 
-    alert(
-      "Group name must be 80 characters or less."
-    );
+function startPresence() {
+  if (!currentUser) return;
 
-    return;
-  }
+  stopPresenceListener();
 
-  button.disabled = true;
-  button.textContent =
-    "Creating...";
+  presenceRef = db.ref("presence/" + currentUser.uid);
+  presenceConnectedRef = db.ref(".info/connected");
 
-  try {
+  presenceCallback = function (snapshot) {
+    if (snapshot.val() !== true) return;
 
-    const groupRef =
-      db.ref("groups").push();
-
-    const group = {
-
-      id:
-        groupRef.key,
-
-      name,
-
-      createdBy:
-        currentUser.uid,
-
-      createdAt:
-        firebase.database
-          .ServerValue.TIMESTAMP,
-
-      members: {
-
-        [currentUser.uid]:
-          true
-
-      }
-
+    const offlineData = {
+      online: false,
+      lastSeen: firebase.database.ServerValue.TIMESTAMP
     };
 
-    await groupRef.set(group);
+    const onlineData = {
+      online: true,
+      lastSeen: firebase.database.ServerValue.TIMESTAMP
+    };
 
-    removeTeamspaceModal();
+    presenceRef
+      .onDisconnect()
+      .set(offlineData)
+      .then(function () {
+        return presenceRef.set(onlineData);
+      })
+      .catch(function (error) {
+        console.warn("Presence update failed:", error);
+      });
+  };
 
-  } catch (error) {
-
-    console.error(
-      "Create group error:",
-      error
-    );
-
-    alert(
-      firebaseError(error)
-    );
-
-  } finally {
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      "Create Group";
-  }
+  presenceConnectedRef.on("value", presenceCallback);
 }
 
-
-/*
-  ============================================================
-  GROUP DETAILS
-  ============================================================
-*/
-
-async function openGroupDetailsModal(group) {
-
-  if (!group) {
-    return;
-  }
-
-  createModal(
-    group.name || "Group",
-
-    `
-      <div id="groupDetailsContent">
-        Loading group details...
-      </div>
-    `
-  );
-
-  const container =
-    document.getElementById(
-      "groupDetailsContent"
-    );
-
-  if (!container) {
-    return;
-  }
+async function markOffline() {
+  if (!currentUser) return;
 
   try {
-
-    /*
-      ----------------------------------------------------------
-      GET MEMBERS
-      ----------------------------------------------------------
-    */
-
-    const members =
-      Object.keys(
-        group.members || {}
-      );
-
-
-    /*
-      ----------------------------------------------------------
-      GET ALL USERS
-      ----------------------------------------------------------
-    */
-
-    const usersSnapshot =
-      await db.ref(
-        "users"
-      ).once("value");
-
-    const users = {};
-
-    usersSnapshot.forEach(
-      child => {
-
-        users[child.key] =
-          child.val();
-
-      }
-    );
-
-
-    /*
-      ----------------------------------------------------------
-      CURRENT USER / ADMIN
-      ----------------------------------------------------------
-    */
-
-    const currentUid =
-      currentUser?.uid || "";
-
-    const adminUid =
-      group.createdBy || "";
-
-    const isAdmin =
-      currentUid === adminUid;
-
-
-    /*
-      ----------------------------------------------------------
-      MEMBER LIST
-      ----------------------------------------------------------
-    */
-
-    const memberHtml =
-      members
-        .map(
-          uid => {
-
-            const user =
-              users[uid] || {};
-
-            const isMemberAdmin =
-              uid === adminUid;
-
-            const isCurrentUser =
-              uid === currentUid;
-
-
-            /*
-              Admin can remove other members.
-              Admin cannot remove themselves.
-            */
-
-            const removeButton =
-              isAdmin &&
-              !isMemberAdmin
-                ? `
-                    <button
-                      type="button"
-                      class="group-member-remove"
-                      data-remove-member="${escapeHtml(uid)}"
-                    >
-                      Remove
-                    </button>
-                  `
-                : "";
-
-
-            return `
-
-              <div
-                style="
-                  display:flex;
-                  align-items:center;
-                  gap:10px;
-                  padding:10px 0;
-                "
-              >
-
-                <div class="avatar">
-
-                  ${
-                    user?.photoUrl
-                      ? `
-                          <img
-                            src="${String(
-                              user.photoUrl
-                            ).replaceAll(
-                              '"',
-                              "&quot;"
-                            )}"
-                            alt=""
-                          >
-                        `
-                      : escapeHtml(
-                          initials(
-                            user?.name
-                          )
-                        )
-                  }
-
-                </div>
-
-
-                <div
-                  style="
-                    flex:1;
-                    min-width:0;
-                  "
-                >
-
-                  <div
-                    style="
-                      display:flex;
-                      align-items:center;
-                      flex-wrap:wrap;
-                      gap:7px;
-                    "
-                  >
-
-                    <strong>
-                      ${escapeHtml(
-                        user?.name ||
-                        "User"
-                      )}
-                    </strong>
-
-
-                    ${
-                      isMemberAdmin
-                        ? `
-                            <span
-                              class="group-admin-badge"
-                            >
-                              Admin
-                            </span>
-                          `
-                        : ""
-                    }
-
-
-                    ${
-                      isCurrentUser
-                        ? `
-                            <span
-                              style="
-                                font-size:.68rem;
-                                color:var(--muted);
-                              "
-                            >
-                              You
-                            </span>
-                          `
-                        : ""
-                    }
-
-                  </div>
-
-
-                  <div
-                    style="
-                      font-size:.72rem;
-                      color:var(--muted);
-                      margin-top:3px;
-                      word-break:break-word;
-                    "
-                  >
-                    ${escapeHtml(
-                      user?.email ||
-                      ""
-                    )}
-                  </div>
-
-                </div>
-
-
-                ${removeButton}
-
-              </div>
-
-            `;
-
-          }
-        )
-        .join("");
-
-
-    /*
-      ==========================================================
-      USERS AVAILABLE TO ADD
-      ==========================================================
-    */
-
-    const availableMembers =
-      Object.keys(users)
-        .filter(
-          uid =>
-            !members.includes(uid)
-        );
-
-
-    /*
-      ----------------------------------------------------------
-      ADD MEMBER LIST
-      ----------------------------------------------------------
-    */
-
-    let addMembersHtml = "";
-
-
-    if (isAdmin) {
-
-      if (
-        availableMembers.length === 0
-      ) {
-
-        addMembersHtml = `
-
-          <div
-            style="
-              margin-top:18px;
-              padding-top:15px;
-              border-top:1px solid var(--border-light);
-              color:var(--muted);
-              font-size:.75rem;
-            "
-          >
-            All registered users are already
-            members of this group.
-          </div>
-
-        `;
-
-      } else {
-
-        const availableMemberHtml =
-          availableMembers
-            .map(
-              uid => {
-
-                const user =
-                  users[uid] || {};
-
-                return `
-
-                  <label
-                    style="
-                      display:flex;
-                      align-items:center;
-                      gap:10px;
-                      padding:8px 0;
-                      cursor:pointer;
-                    "
-                  >
-
-                    <input
-                      type="checkbox"
-                      class="group-add-member-checkbox"
-                      value="${escapeHtml(uid)}"
-                    >
-
-                    <div
-                      class="avatar"
-                      style="
-                        width:32px;
-                        height:32px;
-                        min-width:32px;
-                      "
-                    >
-
-                      ${
-                        user?.photoUrl
-                          ? `
-                              <img
-                                src="${String(
-                                  user.photoUrl
-                                ).replaceAll(
-                                  '"',
-                                  "&quot;"
-                                )}"
-                                alt=""
-                              >
-                            `
-                          : escapeHtml(
-                              initials(
-                                user?.name
-                              )
-                            )
-                      }
-
-                    </div>
-
-
-                    <div
-                      style="
-                        flex:1;
-                        min-width:0;
-                      "
-                    >
-
-                      <div
-                        style="
-                          font-size:.78rem;
-                          font-weight:700;
-                        "
-                      >
-                        ${escapeHtml(
-                          user?.name ||
-                          "User"
-                        )}
-                      </div>
-
-                      <div
-                        style="
-                          font-size:.68rem;
-                          color:var(--muted);
-                          word-break:break-word;
-                        "
-                      >
-                        ${escapeHtml(
-                          user?.email ||
-                          ""
-                        )}
-                      </div>
-
-                    </div>
-
-                  </label>
-
-                `;
-
-              }
-            )
-            .join("");
-
-
-        addMembersHtml = `
-
-          <div
-            style="
-              margin-top:18px;
-              padding-top:15px;
-              border-top:1px solid var(--border-light);
-            "
-          >
-
-            <div
-              style="
-                font-size:.82rem;
-                font-weight:800;
-                margin-bottom:8px;
-              "
-            >
-              Add Members
-            </div>
-
-
-            <div
-              style="
-                color:var(--muted);
-                font-size:.7rem;
-                margin-bottom:10px;
-              "
-            >
-              Select users to add to this group.
-            </div>
-
-
-            <div>
-              ${availableMemberHtml}
-            </div>
-
-
-            <button
-              type="button"
-              id="addGroupMembersButton"
-              class="primary-btn"
-              style="
-                width:100%;
-                margin-top:10px;
-                min-height:40px;
-                border-radius:8px;
-              "
-            >
-              Add Selected Members
-            </button>
-
-          </div>
-
-        `;
-
-      }
-
-    }
-
-
-    /*
-      ==========================================================
-      LEAVE GROUP
-      ==========================================================
-    */
-
-    const leaveGroupHtml =
-      currentUid &&
-      members.includes(currentUid) &&
-      !isAdmin
-        ? `
-
-            <div class="group-profile-actions">
-
-              <button
-                type="button"
-                id="leaveGroupButton"
-                class="danger-profile-btn"
-              >
-                Leave Group
-              </button>
-
-            </div>
-
-          `
-        : "";
-
-
-    /*
-      ==========================================================
-      DISPLAY DETAILS
-      ==========================================================
-    */
-
-    container.innerHTML = `
-
-      <p>
-
-        Created by:
-
-        <strong>
-          ${escapeHtml(
-            users[group.createdBy]?.name ||
-            "Unknown"
-          )}
-        </strong>
-
-
-        <span
-          class="group-admin-badge"
-          style="margin-left:6px;"
-        >
-          Admin
-        </span>
-
-      </p>
-
-
-      <p>
-        Members:
-        ${members.length}
-      </p>
-
-
-      <div>
-        ${memberHtml}
-      </div>
-
-
-      ${addMembersHtml}
-
-
-      ${leaveGroupHtml}
-
-    `;
-
-
-    /*
-      ==========================================================
-      REMOVE MEMBER
-      ==========================================================
-    */
-
-    container
-      .querySelectorAll(
-        "[data-remove-member]"
-      )
-      .forEach(
-        button => {
-
-          button.addEventListener(
-            "click",
-            async () => {
-
-              const memberUid =
-                button.getAttribute(
-                  "data-remove-member"
-                );
-
-              if (!memberUid) {
-                return;
-              }
-
-
-              if (!isAdmin) {
-
-                alert(
-                  "Only the group admin can remove members."
-                );
-
-                return;
-              }
-
-
-              if (
-                memberUid ===
-                currentUid
-              ) {
-
-                alert(
-                  "The group admin cannot remove themselves."
-                );
-
-                return;
-              }
-
-
-              const memberName =
-                users[memberUid]?.name ||
-                "this user";
-
-
-              const confirmed =
-                confirm(
-                  `Remove ${memberName} from ${group.name || "this group"}?`
-                );
-
-
-              if (!confirmed) {
-                return;
-              }
-
-
-              try {
-
-                await db.ref(
-                  `groups/${group.id}/members/${memberUid}`
-                ).remove();
-
-
-                if (
-                  group.members &&
-                  group.members[memberUid]
-                ) {
-
-                  delete group.members[
-                    memberUid
-                  ];
-
-                }
-
-
-                await openGroupDetailsModal(
-                  group
-                );
-
-
-              } catch (error) {
-
-                alert(
-                  firebaseError(error)
-                );
-
-              }
-
-            }
-          );
-
-        }
-      );
-
-
-    /*
-      ==========================================================
-      ADD MEMBERS
-      ==========================================================
-    */
-
-    const addMembersButton =
-      document.getElementById(
-        "addGroupMembersButton"
-      );
-
-
-    if (
-      addMembersButton &&
-      isAdmin
-    ) {
-
-      addMembersButton.addEventListener(
-        "click",
-        async () => {
-
-          const checkboxes =
-            container.querySelectorAll(
-              ".group-add-member-checkbox:checked"
-            );
-
-
-          const selectedUids =
-            Array.from(
-              checkboxes
-            )
-              .map(
-                checkbox =>
-                  checkbox.value
-              )
-              .filter(
-                uid =>
-                  uid &&
-                  !members.includes(uid)
-              );
-
-
-          if (
-            selectedUids.length === 0
-          ) {
-
-            alert(
-              "Select at least one user to add."
-            );
-
-            return;
-          }
-
-
-          try {
-
-            addMembersButton.disabled =
-              true;
-
-            addMembersButton.textContent =
-              "Adding Members...";
-
-
-            /*
-              Build one Firebase update so all
-              selected members are added together.
-            */
-
-            const updates = {};
-
-
-            selectedUids.forEach(
-              uid => {
-
-                updates[
-                  `groups/${group.id}/members/${uid}`
-                ] = true;
-
-              }
-            );
-
-
-            await db.ref().update(
-              updates
-            );
-
-
-            /*
-              Update local group object.
-            */
-
-            if (!group.members) {
-
-              group.members = {};
-
-            }
-
-
-            selectedUids.forEach(
-              uid => {
-
-                group.members[uid] =
-                  true;
-
-              }
-            );
-
-
-            /*
-              Reopen the details with the
-              updated member list.
-            */
-
-            await openGroupDetailsModal(
-              group
-            );
-
-
-          } catch (error) {
-
-            addMembersButton.disabled =
-              false;
-
-            addMembersButton.textContent =
-              "Add Selected Members";
-
-
-            alert(
-              firebaseError(error)
-            );
-
-          }
-
-        }
-      );
-
-    }
-
-
-    /*
-      ==========================================================
-      LEAVE GROUP
-      ==========================================================
-    */
-
-    const leaveButton =
-      document.getElementById(
-        "leaveGroupButton"
-      );
-
-
-    if (leaveButton) {
-
-      leaveButton.addEventListener(
-        "click",
-        async () => {
-
-          if (!currentUid) {
-            return;
-          }
-
-
-          if (isAdmin) {
-
-            alert(
-              "The group admin cannot leave the group."
-            );
-
-            return;
-          }
-
-
-          const confirmed =
-            confirm(
-              `Are you sure you want to leave ${group.name || "this group"}?`
-            );
-
-
-          if (!confirmed) {
-            return;
-          }
-
-
-          try {
-
-            await db.ref(
-              `groups/${group.id}/members/${currentUid}`
-            ).remove();
-
-
-            if (
-              group.members &&
-              group.members[currentUid]
-            ) {
-
-              delete group.members[
-                currentUid
-              ];
-
-            }
-
-
-            if (
-              selectedGroup &&
-              selectedGroup.id === group.id
-            ) {
-
-              selectedGroup = null;
-
-            }
-
-
-            try {
-
-              if (
-                typeof renderGroups ===
-                "function"
-              ) {
-
-                renderGroups();
-
-              }
-
-            } catch (renderError) {
-
-              console.warn(
-                "Unable to refresh group list:",
-                renderError
-              );
-
-            }
-
-
-            /*
-              Refresh the details screen.
-            */
-
-            await openGroupDetailsModal(
-              group
-            );
-
-
-          } catch (error) {
-
-            alert(
-              firebaseError(error)
-            );
-
-          }
-
-        }
-      );
-
-    }
-
+    await db.ref("presence/" + currentUser.uid).set({
+      online: false,
+      lastSeen: firebase.database.ServerValue.TIMESTAMP
+    });
   } catch (error) {
-
-    container.textContent =
-      firebaseError(error);
-
+    console.warn("Unable to mark offline:", error);
   }
-}/*
-  ============================================================
-  AUTH TABS
-  ============================================================
-*/
-
-document
-  .querySelectorAll(".tab")
-  .forEach(
-    tab => {
-
-      tab.addEventListener(
-        "click",
-        () => {
-
-          authMode =
-            tab.dataset.mode ||
-            "login";
-
-          document
-            .querySelectorAll(".tab")
-            .forEach(
-              item => {
-
-                item.classList.toggle(
-                  "active",
-                  item === tab
-                );
-
-              }
-            );
-
-          if (
-            authMode ===
-            "register"
-          ) {
-
-            nameGroup?.classList.remove(
-              "hidden"
-            );
-
-            if (authButton) {
-
-              authButton.textContent =
-                "Create account";
-            }
-
-            if (passwordInput) {
-
-              passwordInput.autocomplete =
-                "new-password";
-            }
-
-          } else {
-
-            nameGroup?.classList.add(
-              "hidden"
-            );
-
-            if (authButton) {
-
-              authButton.textContent =
-                "Sign in";
-            }
-
-            if (passwordInput) {
-
-              passwordInput.autocomplete =
-                "current-password";
-            }
-          }
-
-          setError("");
-
-        }
-      );
-
-    }
-  );
-
-
-/*
-  ============================================================
-  AUTH FORM
-  ============================================================
-*/
-
-if (authForm) {
-
-  authForm.addEventListener(
-    "submit",
-    async event => {
-
-      event.preventDefault();
-
-      const email =
-        emailInput?.value.trim() ||
-        "";
-
-      const password =
-        passwordInput?.value ||
-        "";
-
-      const name =
-        nameInput?.value.trim() ||
-        "";
-
-      setError("");
-
-      if (!email || !password) {
-
-        setError(
-          "Email and password are required."
-        );
-
-        return;
-      }
-
-      if (
-        authMode === "register" &&
-        !name
-      ) {
-
-        setError(
-          "Please enter your name."
-        );
-
-        return;
-      }
-
-      authButton.disabled = true;
-
-      authButton.textContent =
-        authMode === "register"
-          ? "Creating account..."
-          : "Signing in...";
-
-      try {
-
-        if (
-          authMode ===
-          "register"
-        ) {
-
-          const credential =
-            await auth
-              .createUserWithEmailAndPassword(
-                email,
-                password
-              );
-
-          await credential.user.updateProfile({
-            displayName: name
-          });
-
-          await db.ref(
-            "users/" +
-            credential.user.uid
-          ).set({
-
-            uid:
-              credential.user.uid,
-
-            name,
-
-            email:
-              credential.user.email,
-
-            createdAt:
-              firebase.database
-                .ServerValue.TIMESTAMP
-
-          });
-
-          currentUser =
-            credential.user;
-
-          await initializeEncryption();
-
-        } else {
-
-          await auth
-            .signInWithEmailAndPassword(
-              email,
-              password
-            );
-        }
-
-        authForm.reset();
-
-      } catch (error) {
-
-        console.error(
-          "Authentication error:",
-          error
-        );
-
-        setError(
-          firebaseError(error)
-        );
-
-      } finally {
-
-        authButton.disabled =
-          false;
-
-        authButton.textContent =
-          authMode === "register"
-            ? "Create account"
-            : "Sign in";
-      }
-    }
-  );
 }
 
+function listenToUserPresence(uid) {
+  clearSelectedPresenceListener();
 
-/*
-  ============================================================
-  USERS LISTENER
-  ============================================================
-*/
+  if (!uid) return;
+
+  selectedPresenceRef = db.ref("presence/" + uid);
+
+  selectedPresenceCallback = function (snapshot) {
+    const presence = snapshot.val() || {};
+
+    selectedUserOnline = presence.online === true;
+
+    updateSelectedUserPresence(presence);
+
+    if (selectedUser && currentWorkspace !== "groups" && lastRenderedMessages.length) {
+      renderMessagesFromCurrentListener();
+    }
+  };
+
+  selectedPresenceRef.on("value", selectedPresenceCallback);
+}
+
+function updateSelectedUserPresence(presence) {
+  if (!chatHeaderStatus) return;
+
+  if (presence && presence.online) {
+    chatHeaderStatus.innerHTML =
+      '<span class="online-dot online"></span>Online';
+    return;
+  }
+
+  chatHeaderStatus.innerHTML =
+    '<span class="online-dot"></span>' +
+    escapeHtml(formatLastSeen(presence && presence.lastSeen));
+}
+
+/* =========================================================
+   USERS
+   ========================================================= */
+
+function buildAvailableUsers(data) {
+  if (!currentUser) return [];
+
+  return Object.keys(data || {})
+    .map(function (uid) {
+      return Object.assign({}, data[uid] || {}, { uid: uid });
+    })
+    .filter(function (user) {
+      return user.uid !== currentUser.uid;
+    })
+    .sort(function (a, b) {
+      return String(a.name || a.email || "")
+        .toLowerCase()
+        .localeCompare(String(b.name || b.email || "").toLowerCase());
+    });
+}
 
 function listenToUsers() {
+  stopUsersListener();
 
-  if (usersListener) {
+  if (!currentUser) return;
 
-    db.ref("users").off(
-      "value",
-      usersListener
-    );
-  }
-
-  usersListener =
-    snapshot => {
-
-      const users = [];
-
-      snapshot.forEach(
-        child => {
-
-          const user =
-            child.val();
-
-          if (
-            user &&
-            child.key !==
-            currentUser?.uid
-          ) {
-
-            users.push({
-
-              ...user,
-
-              uid:
-                child.key
-
-            });
-          }
-        }
-      );
-
-      availableUsers =
-        users.sort(
-          (a, b) =>
-            String(
-              a.name || ""
-            ).localeCompare(
-              String(
-                b.name || ""
-              )
-            )
-        );
-
-      if (
-        currentWorkspace ===
-        "people"
-      ) {
-
-        renderUsers();
-      }
-    };
-
-  db.ref("users").on(
-    "value",
-    usersListener
-  );
-}
-
-
-/*
-  ============================================================
-  LOAD CHATTED USERS
-  ============================================================
-*/
-
-async function loadChattedUsers() {
-
-  if (!currentUser) {
-    return;
-  }
-
-  const usersSnapshot =
-    await db.ref(
-      "users"
-    ).once("value");
-
-  const allUsers = {};
-
-  usersSnapshot.forEach(
-    child => {
-
-      allUsers[child.key] = {
-
-        ...child.val(),
-
-        uid:
-          child.key
-
-      };
-    }
-  );
-
-  const result = [];
-
-  for (
-    const uid in allUsers
-  ) {
-
-    if (
-      uid ===
-      currentUser.uid
-    ) {
-      continue;
-    }
-
-    const chatId =
-      makeChatId(
-        currentUser.uid,
-        uid
-      );
-
-    const messagesSnapshot =
-      await db.ref(
-        "privateChats/" +
-        chatId +
-        "/messages"
-      )
-        .limitToLast(1)
-        .once("value");
-
-    if (
-      messagesSnapshot.exists()
-    ) {
-
-      result.push(
-        allUsers[uid]
-      );
-    }
-  }
-
-  chattedUsers =
-    result;
-}
-
-
-/*
-  ============================================================
-  USER LIST
-  ============================================================
-*/
-
-function renderUsers() {
-
-  if (!userList) {
-    return;
-  }
-
-  if (!availableUsers.length) {
-
-    userList.innerHTML = `
-
-      <div class="empty-chat">
-
-        <div>
-          No other users found.
-        </div>
-
-      </div>
-
-    `;
-
-    return;
-  }
-
-  userList.innerHTML =
-    availableUsers
-      .map(
-        user => `
-
-          <button
-            type="button"
-            class="user-row"
-            data-user-id="${escapeHtml(
-              user.uid
-            )}"
-          >
-
-            <div class="avatar">
-
-              ${
-                getProfilePhoto(user)
-                  ? `
-                    <img
-                      src="${String(
-                        getProfilePhoto(user)
-                      ).replaceAll(
-                        '"',
-                        "&quot;"
-                      )}"
-                      alt=""
-                    >
-                  `
-                  : escapeHtml(
-                      initials(
-                        user.name
-                      )
-                    )
-              }
-
-            </div>
-
-            <div>
-
-              <strong>
-                ${escapeHtml(
-                  user.name ||
-                  "User"
-                )}
-              </strong>
-
-              <small>
-                ${escapeHtml(
-                  user.email ||
-                  ""
-                )}
-              </small>
-
-            </div>
-
-          </button>
-
-        `
-      )
-      .join("");
-
-  userList
-    .querySelectorAll(
-      "[data-user-id]"
-    )
-    .forEach(
-      row => {
-
-        row.addEventListener(
-          "click",
-          () => {
-
-            const user =
-              availableUsers.find(
-                item =>
-                  item.uid ===
-                  row.dataset.userId
-              );
-
-            if (user) {
-              selectUser(user);
-            }
-          }
-        );
-
-        row.addEventListener(
-          "contextmenu",
-          event => {
-
-            event.preventDefault();
-
-            const user =
-              availableUsers.find(
-                item =>
-                  item.uid ===
-                  row.dataset.userId
-              );
-
-            if (user) {
-              openUserProfileModal(
-                user
-              );
-            }
-          }
-        );
-      }
-    );
-}
-
-
-function renderChatList() {
-
-  if (!userList) {
-    return;
-  }
-
-  if (!chattedUsers.length) {
-
-    userList.innerHTML = `
-
-      <div
-        style="
-          padding:20px;
-          text-align:center;
-          opacity:.7;
-        "
-      >
-
-        No conversations yet.
-
-      </div>
-
-    `;
-
-    return;
-  }
-
-  userList.innerHTML =
-    chattedUsers
-      .map(
-        user => `
-
-          <button
-            type="button"
-            class="user-row"
-            data-user-id="${escapeHtml(
-              user.uid
-            )}"
-          >
-
-            <div class="avatar">
-
-              ${
-                getProfilePhoto(user)
-                  ? `
-                    <img
-                      src="${String(
-                        getProfilePhoto(user)
-                      ).replaceAll(
-                        '"',
-                        "&quot;"
-                      )}"
-                      alt=""
-                    >
-                  `
-                  : escapeHtml(
-                      initials(
-                        user.name
-                      )
-                    )
-              }
-
-            </div>
-
-            <div>
-
-              <strong>
-                ${escapeHtml(
-                  user.name ||
-                  "User"
-                )}
-              </strong>
-
-              <small>
-                Private chat 🔒
-              </small>
-
-            </div>
-
-          </button>
-
-        `
-      )
-      .join("");
-
-  userList
-    .querySelectorAll(
-      "[data-user-id]"
-    )
-    .forEach(
-      row => {
-
-        row.addEventListener(
-          "click",
-          () => {
-
-            const user =
-              chattedUsers.find(
-                item =>
-                  item.uid ===
-                  row.dataset.userId
-              );
-
-            if (user) {
-              selectUser(user);
-            }
-          }
-        );
-      }
-    );
-}
-
-
-function ensureUserInChatList(user) {
-
-  if (!user) {
-    return;
-  }
-
-  if (
-    !chattedUsers.some(
-      item =>
-        item.uid ===
-        user.uid
-    )
-  ) {
-
-    chattedUsers.push(user);
-  }
-
-  if (
-    currentWorkspace ===
-    "chat"
-  ) {
-
-    renderChatList();
-  }
-}
-
-
-/*
-  ============================================================
-  GROUP LISTENER
-  ============================================================
-*/
-
-function listenToGroups() {
-
-  if (groupsListener) {
-
-    db.ref("groups").off(
-      "value",
-      groupsListener
-    );
-  }
-
-  groupsListener =
-    snapshot => {
-
-      const groups = [];
-
-      snapshot.forEach(
-        child => {
-
-          const group =
-            child.val();
-
-          if (
-            group?.members?.[
-              currentUser?.uid
-            ]
-          ) {
-
-            groups.push({
-
-              ...group,
-
-              id:
-                child.key,
-
-              memberCount:
-                Object.keys(
-                  group.members || {}
-                ).length
-
-            });
-          }
-        }
-      );
-
-      groups.sort(
-        (a, b) =>
-          (b.createdAt || 0) -
-          (a.createdAt || 0)
-      );
-
-      groupCache =
-        Object.fromEntries(
-          groups.map(
-            group => [
-              group.id,
-              group
-            ]
-          )
-        );
-
-      if (
-        currentWorkspace ===
-        "groups"
-      ) {
-
-        renderGroups();
-      }
-    };
-
-  db.ref("groups").on(
-    "value",
-    groupsListener
-  );
-}
-
-
-/*
-  ============================================================
-  GROUP LIST
-  ============================================================
-*/
-
-function renderGroups() {
-
-  if (!userList) {
-    return;
-  }
-
-  const groups =
-    Object.values(
-      groupCache
-    );
-
-  if (!groups.length) {
-
-    userList.innerHTML = `
-
-      <div
-        style="
-          padding:20px;
-          text-align:center;
-          opacity:.7;
-        "
-      >
-
-        No groups yet.
-
-      </div>
-
-    `;
-
-    return;
-  }
-
-  userList.innerHTML =
-    groups
-      .map(
-        group => `
-
-          <button
-            type="button"
-            class="group-row user-row"
-            data-group-id="${escapeHtml(
-              group.id
-            )}"
-          >
-
-            <div class="avatar">
-              👥
-            </div>
-
-            <div>
-
-              <strong>
-                ${escapeHtml(
-                  group.name
-                )}
-              </strong>
-
-              <small>
-                ${group.memberCount || 0}
-                members
-              </small>
-
-            </div>
-
-          </button>
-
-        `
-      )
-      .join("");
-
-  userList
-    .querySelectorAll(
-      "[data-group-id]"
-    )
-    .forEach(
-      row => {
-
-        row.addEventListener(
-          "click",
-          () => {
-
-            const group =
-              groupCache[
-                row.dataset.groupId
-              ];
-
-            if (group) {
-              selectGroup(group);
-            }
-          }
-        );
-      }
-    );
-}
-
-
-/*
-  ============================================================
-  WORKSPACE
-  ============================================================
-*/
-
-function setWorkspace(workspace) {
-
-  currentWorkspace =
-    workspace;
-
-  ensureWorkspaceNavigation();
-
-  if (listTitle) {
-
-    if (
-      workspace ===
-      "people"
-    ) {
-
-      listTitle.textContent =
-        "People";
-
-    } else if (
-      workspace ===
-      "groups"
-    ) {
-
-      listTitle.textContent =
-        "Groups";
-
-    } else {
-
-      listTitle.textContent =
-        "Conversations";
-    }
-  }
-
-  if (
-    workspace ===
-    "people"
-  ) {
+  usersListener = function (snapshot) {
+    availableUsers = buildAvailableUsers(snapshot.val() || {});
 
     renderUsers();
 
-  } else if (
-    workspace ===
-    "groups"
-  ) {
-
-    renderGroups();
-
-  } else {
-
-    renderChatList();
-  }
-}
-
-
-chatNav?.addEventListener(
-  "click",
-  () => {
-
-    setWorkspace("chat");
-
-  }
-);
-
-
-peopleNav?.addEventListener(
-  "click",
-  () => {
-
-    setWorkspace("people");
-
-  }
-);
-
-
-groupsNav?.addEventListener(
-  "click",
-  () => {
-
-    setWorkspace("groups");
-
-  }
-);
-
-
-/*
-  ============================================================
-  SELECT PRIVATE USER
-  ============================================================
-*/
-
-function selectUser(user) {
-
-  if (
-    !user ||
-    !currentUser
-  ) {
-    return;
-  }
-
-  selectedUser =
-    user;
-
-  selectedGroup =
-    null;
-
-  setGroupHeaderClickable(false);
-
-  clearMessageListener();
-  clearPresenceListeners();
-
-  if (chatUserName) {
-
-    chatUserName.textContent =
-      user.name ||
-      "User";
-  }
-
-  if (chatStatus) {
-
-    chatStatus.textContent =
-      "🔒 End-to-end encrypted";
-
-    chatStatus.classList.remove(
-      "online",
-      "offline"
-    );
-  }
-
-  setAvatarElement(
-    chatUserAvatar,
-    user,
-    user.name
-  );
-
-  if (messageForm) {
-
-    messageForm.classList.remove(
-      "hidden"
-    );
-  }
-
-  listenToUserPresence(
-    user.uid,
-    chatStatus
-  );
-
-  const chatId =
-    makeChatId(
-      currentUser.uid,
-      user.uid
-    );
-
-  listenToMessages(
-    "privateChats/" +
-    chatId +
-    "/messages",
-    false
-  );
-}
-
-
-/*
-  ============================================================
-  SELECT GROUP
-  ============================================================
-*/
-
-function selectGroup(group) {
-
-  if (
-    !group ||
-    !currentUser
-  ) {
-    return;
-  }
-
-  if (
-    typeof group ===
-    "string"
-  ) {
-
-    group =
-      groupCache[group];
-  }
-
-  if (!group) {
-    return;
-  }
-
-  selectedGroup =
-    group;
-
-  selectedUser =
-    null;
-
-  setGroupHeaderClickable(true);
-
-  clearMessageListener();
-  clearPresenceListeners();
-
-  if (chatUserName) {
-
-    chatUserName.textContent =
-      group.name;
-  }
-
-  if (chatStatus) {
-
-    chatStatus.textContent =
-      `${group.memberCount || 0} members`;
-
-    chatStatus.classList.remove(
-      "online",
-      "offline"
-    );
-  }
-
-  setAvatarElement(
-    chatUserAvatar,
-    null,
-    "Group"
-  );
-
-  if (messageForm) {
-
-    messageForm.classList.remove(
-      "hidden"
-    );
-  }
-
-  listenToMessages(
-    "groups/" +
-    group.id +
-    "/messages",
-    true
-  );
-}
-
-
-/*
-  ============================================================
-  MESSAGE LISTENER
-  ============================================================
-*/
-
-function listenToMessages(
-  path,
-  isGroup
-) {
-
-  clearMessageListener();
-
-  activeMessagePath =
-    path;
-
-  const ref =
-    db.ref(path)
-      .limitToLast(200);
-
-  messageListener =
-    async snapshot => {
-
-      const messages = [];
-
-      snapshot.forEach(
-        child => {
-
-          const message =
-            child.val();
-
-          if (message) {
-
-            messages.push({
-
-              ...message,
-
-              id:
-                child.key
-
-            });
-          }
-        }
-      );
-
-      messages.sort(
-        (a, b) =>
-          (a.createdAt || 0) -
-          (b.createdAt || 0)
-      );
-
-      if (
-        !isGroup &&
-        messages.length &&
-        selectedUser
-      ) {
-
-        ensureUserInChatList(
-          selectedUser
-        );
-      }
-
-      await renderMessages(
-        messages,
-        isGroup
-      );
-    };
-
-  ref.on(
-    "value",
-    messageListener,
-    error => {
-
-      console.error(
-        "Message listener error:",
-        error
-      );
-
-      renderEmptyChat(
-        "Unable to load messages",
-        firebaseError(error)
-      );
+    if (currentWorkspace === "groups" && currentGroupModalGroup) {
+      renderGroupAdminControls(currentGroupModalGroup);
     }
-  );
+  };
+
+  db.ref("users").on("value", usersListener);
 }
 
-
-/*
-  ============================================================
-  RENDER MESSAGES
-  ============================================================
-*/
-
-async function renderMessages(
-  messages,
-  isGroup
-) {
-
-  if (!messagesBox) {
-    return;
-  }
-
-  if (!messages.length) {
-
-    renderEmptyChat(
-      isGroup
-        ? "Group conversation"
-        : "Private conversation",
-
-      isGroup
-        ? "Send a message to the group."
-        : "Messages are protected with end-to-end encryption."
-    );
-
-    return;
-  }
-
-  messagesBox.innerHTML = "";
-
-  for (
-    const message of messages
-  ) {
-
-    const mine =
-      message.senderId ===
-      currentUser?.uid;
-
-    const wrapper =
-      document.createElement(
-        "div"
-      );
-
-    wrapper.className =
-      "message " +
-      (
-        mine
-          ? "mine"
-          : "theirs"
-      );
-
-    const bubble =
-      document.createElement(
-        "div"
-      );
-
-    bubble.className =
-      "message-bubble";
-
-
-    /*
-      GROUP MESSAGE
-    */
-
-    if (isGroup) {
-
-      if (!mine) {
-
-        const sender =
-          document.createElement(
-            "div"
-          );
-
-        sender.className =
-          "message-sender";
-
-        sender.textContent =
-          message.senderName ||
-          "User";
-
-        bubble.appendChild(
-          sender
-        );
-      }
-
-      if (
-        message.type ===
-        "image" &&
-        message.imageUrl
-      ) {
-
-        const img =
-          document.createElement(
-            "img"
-          );
-
-        img.src =
-          message.imageUrl;
-
-        img.alt =
-          message.imageName ||
-          "TeamSpace Photo";
-
-        img.addEventListener(
-          "click",
-          () =>
-            openImageViewer(
-              message.imageUrl,
-              message.imageName
-            )
-        );
-
-        bubble.appendChild(img);
-
-      } else {
-
-        const text =
-          document.createElement(
-            "div"
-          );
-
-        text.textContent =
-          message.body ||
-          "";
-
-        bubble.appendChild(text);
-      }
-
-    }
-
-
-    /*
-      PRIVATE MESSAGE
-    */
-
-    else {
-
-      if (
-        message.encrypted ===
-        true
-      ) {
-
-        let decryptedText =
-          "Decrypting...";
-
-        const textElement =
-          document.createElement(
-            "div"
-          );
-
-        textElement.textContent =
-          decryptedText;
-
-        bubble.appendChild(
-          textElement
-        );
-
-        try {
-
-          if (
-            message.type ===
-            "image"
-          ) {
-
-            const imageData =
-              await decryptPrivatePhoto(
-                message,
-                message.senderId
-              );
-
-            const img =
-              document.createElement(
-                "img"
-              );
-
-            img.src =
-              imageData;
-
-            img.alt =
-              message.imageName ||
-              "Encrypted photo";
-
-            img.addEventListener(
-              "click",
-              () =>
-                openImageViewer(
-                  imageData,
-                  message.imageName
-                )
-            );
-
-            textElement.remove();
-
-            bubble.appendChild(img);
-
-          } else {
-
-            decryptedText =
-              await decryptPrivateText(
-                message,
-                message.senderId
-              );
-
-            textElement.textContent =
-              decryptedText;
-          }
-
-        } catch (error) {
-
-          console.error(
-            "Unable to decrypt message:",
-            error
-          );
-
-          textElement.textContent =
-            "🔒 Unable to decrypt this message.";
-        }
-
-      } else {
-
-        /*
-          Legacy plaintext messages.
-        */
-
-        const text =
-          document.createElement(
-            "div"
-          );
-
-        text.textContent =
-          message.body ||
-          "";
-
-        bubble.appendChild(text);
-      }
-    }
-
-
-    /*
-      TIMESTAMP
-    */
-
-    const meta =
-      document.createElement(
-        "div"
-      );
-
-    meta.className =
-      "message-meta";
-
-    meta.textContent =
-      formatTime(
-        message.createdAt
-      );
-
-    bubble.appendChild(meta);
-
-
-    /*
-      ENCRYPTION INDICATOR
-    */
-
-    if (
-      !isGroup &&
-      message.encrypted ===
-      true
-    ) {
-
-      const security =
-        document.createElement(
-          "div"
-        );
-
-      security.className =
-        "e2ee-indicator";
-
-      security.textContent =
-        "🔒 End-to-end encrypted";
-
-      bubble.appendChild(
-        security
-      );
-    }
-
-    wrapper.appendChild(
-      bubble
-    );
-
-    messagesBox.appendChild(
-      wrapper
-    );
-  }
-
-  messagesBox.scrollTop =
-    messagesBox.scrollHeight;
-}
-
-
-/*
-  ============================================================
-  SEND TEXT MESSAGE
-  ============================================================
-*/
-
-if (messageForm) {
-
-  messageForm.addEventListener(
-    "submit",
-    async event => {
-
-      event.preventDefault();
-
-      const body =
-        messageInput?.value.trim() ||
-        "";
-
-      if (
-        !body ||
-        !currentUser
-      ) {
-        return;
-      }
-
-      if (
-        !selectedUser &&
-        !selectedGroup
-      ) {
-        return;
-      }
-
-      if (
-        body.length >
-        5000
-      ) {
-
-        alert(
-          "Messages must be 5000 characters or less."
-        );
-
-        return;
-      }
-
-      const originalBody =
-        body;
-
-      messageInput.value =
-        "";
-
-      try {
-
-        let messageRef;
-
-
-        /*
-          PRIVATE CHAT
-        */
-
-        if (selectedUser) {
-
-          if (
-            !encryptionInitialized
-          ) {
-
-            await initializeEncryption();
-          }
-
-          const encrypted =
-            await encryptPrivateText(
-              body,
-              selectedUser.uid
-            );
-
-          const chatId =
-            makeChatId(
-              currentUser.uid,
-              selectedUser.uid
-            );
-
-          messageRef =
-            db.ref(
-              "privateChats/" +
-              chatId +
-              "/messages"
-            ).push();
-
-          const message = {
-
-            senderId:
-              currentUser.uid,
-
-            senderName:
-              currentProfile?.name ||
-              currentUser.email,
-
-            type:
-              "text",
-
-            encrypted:
-              true,
-
-            iv:
-              encrypted.iv,
-
-            ciphertext:
-              encrypted.ciphertext,
-
-            createdAt:
-              firebase.database
-                .ServerValue.TIMESTAMP
-
-          };
-
-          await messageRef.set(
-            message
-          );
-
-          ensureUserInChatList(
-            selectedUser
-          );
-        }
-
-
-        /*
-          GROUP CHAT
-        */
-
-        else if (selectedGroup) {
-
-          messageRef =
-            db.ref(
-              "groups/" +
-              selectedGroup.id +
-              "/messages"
-            ).push();
-
-          const message = {
-
-            senderId:
-              currentUser.uid,
-
-            senderName:
-              currentProfile?.name ||
-              currentUser.email,
-
-            type:
-              "text",
-
-            body,
-
-            createdAt:
-              firebase.database
-                .ServerValue.TIMESTAMP
-
-          };
-
-          await messageRef.set(
-            message
-          );
-        }
-
-      } catch (error) {
-
-        console.error(
-          "Send message error:",
-          error
-        );
-
-        if (messageInput) {
-
-          messageInput.value =
-            originalBody;
-        }
-
-        alert(
-          firebaseError(error)
-        );
-      }
-    }
-  );
-}
-
-
-if (messageInput) {
-
-  messageInput.addEventListener(
-    "keydown",
-    event => {
-
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey
-      ) {
-
-        event.preventDefault();
-
-        if (
-          messageForm &&
-          typeof messageForm.requestSubmit ===
-          "function"
-        ) {
-
-          messageForm.requestSubmit();
-        }
-      }
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  SEND PHOTO
-  ============================================================
-*/
-
-async function sendPhoto(file) {
-
-  if (
-    !file ||
-    !currentUser
-  ) {
-    return;
-  }
-
-  if (
-    !selectedUser &&
-    !selectedGroup
-  ) {
-
-    alert(
-      "Select a conversation first."
-    );
-
-    return;
-  }
-
-  if (
-    !file.type.startsWith(
-      "image/"
-    )
-  ) {
-
-    alert(
-      "Please select an image file."
-    );
-
-    return;
-  }
-
-  if (
-    file.size >
-    10 * 1024 * 1024
-  ) {
-
-    alert(
-      "Photo must be 10 MB or smaller."
-    );
-
-    return;
-  }
-
-  if (imageButton) {
-    imageButton.disabled = true;
-  }
-
-  if (uploadStatus) {
-
-    uploadStatus.style.display =
-      "block";
-
-    uploadStatus.textContent =
-      "Compressing photo...";
-  }
+async function loadChattedUsers() {
+  if (!currentUser) return;
 
   try {
-
-    const compressed =
-      await compressImage(file);
-
-    const estimatedBytes =
-      Math.round(
-        compressed.dataUrl.length *
-        0.75
-      );
-
-    if (
-      estimatedBytes >
-      500 * 1024
-    ) {
-
-      throw new Error(
-        "The photo is still too large after compression. Please choose another photo."
-      );
+    if (!availableUsers.length) {
+      const usersSnapshot = await db.ref("users").once("value");
+      availableUsers = buildAvailableUsers(usersSnapshot.val() || {});
     }
 
-    if (uploadStatus) {
+    const snapshot = await db.ref("privateChats").once("value");
+    const allChats = snapshot.val() || {};
 
-      uploadStatus.textContent =
-        selectedUser
-          ? "Encrypting photo..."
-          : "Sending photo...";
-    }
+    const unique = new Map();
 
-    let messageRef;
+    Object.keys(allChats).forEach(function (chatId) {
+      if (chatId.indexOf(currentUser.uid) === -1) return;
 
+      const parts = chatId.split("_");
 
-    /*
-      PRIVATE PHOTO
-    */
+      const otherUid = parts.find(function (uid) {
+        return uid !== currentUser.uid;
+      });
 
-    if (selectedUser) {
+      if (!otherUid) return;
 
-      if (
-        !encryptionInitialized
-      ) {
+      const user = availableUsers.find(function (item) {
+        return item.uid === otherUid;
+      });
 
-        await initializeEncryption();
-      }
-
-      const encrypted =
-        await encryptPrivatePhoto(
-          compressed.dataUrl,
-          selectedUser.uid
-        );
-
-      const chatId =
-        makeChatId(
-          currentUser.uid,
-          selectedUser.uid
-        );
-
-      messageRef =
-        db.ref(
-          "privateChats/" +
-          chatId +
-          "/messages"
-        ).push();
-
-      const message = {
-
-        senderId:
-          currentUser.uid,
-
-        senderName:
-          currentProfile?.name ||
-          currentUser.email,
-
-        type:
-          "image",
-
-        encrypted:
-          true,
-
-        iv:
-          encrypted.iv,
-
-        ciphertext:
-          encrypted.ciphertext,
-
-        imageName:
-          file.name,
-
-        imageWidth:
-          compressed.width,
-
-        imageHeight:
-          compressed.height,
-
-        createdAt:
-          firebase.database
-            .ServerValue.TIMESTAMP
-
-      };
-
-      await messageRef.set(
-        message
-      );
-
-      ensureUserInChatList(
-        selectedUser
-      );
-    }
-
-
-    /*
-      GROUP PHOTO
-    */
-
-    else if (selectedGroup) {
-
-      const conversationPath =
-        "groups/" +
-        selectedGroup.id +
-        "/messages";
-
-      messageRef =
-        db.ref(
-          conversationPath
-        ).push();
-
-      const message = {
-
-        senderId:
-          currentUser.uid,
-
-        senderName:
-          currentProfile?.name ||
-          currentUser.email,
-
-        type:
-          "image",
-
-        imageUrl:
-          compressed.dataUrl,
-
-        imageName:
-          file.name,
-
-        imageWidth:
-          compressed.width,
-
-        imageHeight:
-          compressed.height,
-
-        createdAt:
-          firebase.database
-            .ServerValue.TIMESTAMP
-
-      };
-
-      await messageRef.set(
-        message
-      );
-    }
-
-    if (uploadStatus) {
-
-      uploadStatus.textContent =
-        "Photo sent ✓";
-
-      setTimeout(
-        () => {
-
-          if (uploadStatus) {
-
-            uploadStatus.style.display =
-              "none";
-          }
-
-        },
-        1200
-      );
-    }
-
-  } catch (error) {
-
-    console.error(
-      "Photo sending error:",
-      error
-    );
-
-    if (uploadStatus) {
-
-      uploadStatus.style.display =
-        "none";
-    }
-
-    alert(
-      "Unable to send photo: " +
-      firebaseError(error)
-    );
-
-  } finally {
-
-    if (imageInput) {
-      imageInput.value = "";
-    }
-
-    if (imageButton) {
-      imageButton.disabled = false;
-    }
-  }
-}
-
-
-/*
-  ============================================================
-  IMAGE BUTTON
-  ============================================================
-*/
-
-if (imageButton) {
-
-  imageButton.addEventListener(
-    "click",
-    () => {
-
-      if (
-        !selectedUser &&
-        !selectedGroup
-      ) {
-
-        alert(
-          "Select a conversation first."
-        );
-
-        return;
-      }
-
-      imageInput?.click();
-
-    }
-  );
-}
-
-
-if (imageInput) {
-
-  imageInput.addEventListener(
-    "change",
-    event => {
-
-      const file =
-        event.target.files?.[0];
-
-      if (file) {
-        sendPhoto(file);
-      }
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  REFRESH
-  ============================================================
-*/
-
-if (refreshUsers) {
-
-  refreshUsers.addEventListener(
-    "click",
-    async () => {
-
-      if (!currentUser) {
-        return;
-      }
-
-      refreshUsers.disabled =
-        true;
-
-      try {
-
-        const usersSnapshot =
-          await db.ref(
-            "users"
-          ).once("value");
-
-        const users = [];
-
-        usersSnapshot.forEach(
-          child => {
-
-            const user =
-              child.val();
-
-            if (
-              user &&
-              child.key !==
-              currentUser.uid
-            ) {
-
-              users.push({
-
-                ...user,
-
-                uid:
-                  child.key
-
-              });
-            }
-          }
-        );
-
-        availableUsers =
-          users.sort(
-            (a, b) =>
-              String(
-                a.name || ""
-              ).localeCompare(
-                String(
-                  b.name || ""
-                )
-              )
-          );
-
-        const groupsSnapshot =
-          await db.ref(
-            "groups"
-          ).once("value");
-
-        const groups = [];
-
-        groupsSnapshot.forEach(
-          child => {
-
-            const group =
-              child.val();
-
-            if (
-              group?.members?.[
-                currentUser.uid
-              ]
-            ) {
-
-              groups.push({
-
-                ...group,
-
-                id:
-                  child.key,
-
-                memberCount:
-                  Object.keys(
-                    group.members ||
-                    {}
-                  ).length
-
-              });
-            }
-          }
-        );
-
-        groups.sort(
-          (a, b) =>
-            (b.createdAt || 0) -
-            (a.createdAt || 0)
-        );
-
-        groupCache =
-          Object.fromEntries(
-            groups.map(
-              group => [
-                group.id,
-                group
-              ]
-            )
-          );
-
-        await loadChattedUsers();
-
-        if (
-          currentWorkspace ===
-          "people"
-        ) {
-
-          renderUsers();
-
-        } else if (
-          currentWorkspace ===
-          "groups"
-        ) {
-
-          renderGroups();
-
-        } else {
-
-          renderChatList();
-        }
-
-      } catch (error) {
-
-        console.error(
-          "Refresh error:",
-          error
-        );
-
-        if (userList) {
-
-          userList.textContent =
-            firebaseError(error);
-        }
-
-      } finally {
-
-        refreshUsers.disabled =
-          false;
-      }
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  LOG OUT
-  ============================================================
-*/
-
-if (logoutBtn) {
-
-  logoutBtn.addEventListener(
-    "click",
-    async () => {
-
-      const confirmed =
-        window.confirm(
-          "Are you sure you want to log out of TeamSpace?"
-        );
-
-      if (!confirmed) {
-        return;
-      }
-
-      logoutBtn.disabled =
-        true;
-
-      try {
-
-        await markCurrentUserOffline();
-
-        stopPresenceListener();
-
-        clearAllListeners();
-
-        await auth.signOut();
-
-      } catch (error) {
-
-        console.error(
-          "Sign out error:",
-          error
-        );
-
-        alert(
-          firebaseError(error)
-        );
-
-      } finally {
-
-        logoutBtn.disabled =
-          false;
-      }
-    }
-  );
-}
-
-
-/*
-  ============================================================
-  DELETE ACCOUNT
-  ============================================================
-*/
-
-async function deleteAccount() {
-
-  if (!currentUser) {
-    return;
-  }
-
-  const firstConfirm =
-    window.confirm(
-      "DELETE ACCOUNT\n\n" +
-      "This will permanently delete your TeamSpace account and profile.\n\n" +
-      "This action cannot be undone.\n\n" +
-      "Do you want to continue?"
-    );
-
-  if (!firstConfirm) {
-    return;
-  }
-
-  const secondConfirm =
-    window.confirm(
-      "FINAL CONFIRMATION\n\n" +
-      "Your TeamSpace account will be permanently deleted.\n\n" +
-      "Click OK only if you are absolutely sure."
-    );
-
-  if (!secondConfirm) {
-    return;
-  }
-
-  const password =
-    window.prompt(
-      "For security, enter your current TeamSpace password to confirm account deletion:"
-    );
-
-  if (password === null) {
-    return;
-  }
-
-  if (!password) {
-
-    alert(
-      "Password is required to delete the account."
-    );
-
-    return;
-  }
-
-  if (deleteAccountBtn) {
-
-    deleteAccountBtn.disabled =
-      true;
-
-    deleteAccountBtn.textContent =
-      "⏳";
-  }
-
-  try {
-
-    const user =
-      currentUser;
-
-    const uid =
-      user.uid;
-
-    const email =
-      user.email;
-
-    const credential =
-      firebase.auth.EmailAuthProvider.credential(
-        email,
-        password
-      );
-
-    await user.reauthenticateWithCredential(
-      credential
-    );
-
-    await db.ref(
-      "presence/" +
-      uid
-    ).set({
-
-      state:
-        "offline",
-
-      lastChanged:
-        firebase.database
-          .ServerValue.TIMESTAMP
-
+      if (user) unique.set(user.uid, user);
     });
 
-    const groupsSnapshot =
-      await db.ref(
-        "groups"
-      ).once("value");
+    chattedUsers = Array.from(unique.values());
 
-    const updates = {};
+    renderUsers();
+  } catch (error) {
+    console.error("Unable to load chatted users:", error);
+  }
+}
 
-    groupsSnapshot.forEach(
-      child => {
+function ensureUserInChatList(user) {
+  if (!user) return;
 
-        const group =
-          child.val();
+  const exists = chattedUsers.some(function (item) {
+    return item.uid === user.uid;
+  });
 
-        if (
-          group?.members?.[uid]
-        ) {
+  if (!exists) {
+    chattedUsers.push(user);
 
-          updates[
-            "groups/" +
-            child.key +
-            "/members/" +
-            uid
-          ] = null;
-        }
-      }
-    );
+    chattedUsers.sort(function (a, b) {
+      return String(a.name || a.email || "").localeCompare(
+        String(b.name || b.email || "")
+      );
+    });
+  }
 
-    updates[
-      "users/" +
-      uid
-    ] = null;
+  renderUsers();
+}
 
-    updates[
-      "presence/" +
-      uid
-    ] = null;
+/* =========================================================
+   USER LIST RENDERING
+   ========================================================= */
 
-    await db.ref().update(
-      updates
-    );
+function renderUsers() {
+  if (!userList) return;
 
-    await deletePrivateKey(uid);
+  if (currentWorkspace === "groups") {
+    renderGroups();
+    return;
+  }
 
-    await user.delete();
+  let users = [];
 
-    currentUser = null;
-    currentProfile = null;
+  if (currentWorkspace === "people") {
+    const term = (peopleSearchInput && peopleSearchInput.value.trim().toLowerCase()) || "";
 
-    selectedUser = null;
-    selectedGroup = null;
+    users = availableUsers.filter(function (user) {
+      if (!term) return true;
 
-    availableUsers = [];
-    chattedUsers = [];
+      const name = String(user.name || "").toLowerCase();
+      const email = String(user.email || "").toLowerCase();
+
+      return name.indexOf(term) !== -1 || email.indexOf(term) !== -1;
+    });
+  } else {
+    users = chattedUsers;
+  }
+
+  if (!users.length) {
+    userList.innerHTML =
+      currentWorkspace === "people"
+        ? '<div class="empty-list">No people found.</div>'
+        : '<div class="empty-list">No conversations yet.</div>';
+    return;
+  }
+
+  userList.innerHTML = "";
+
+  users.forEach(function (user) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "user-list-item";
+
+    if (selectedUser && selectedUser.uid === user.uid) {
+      row.classList.add("active");
+    }
+
+    const photo = user.photoURL
+      ? `<img src="${escapeHtml(user.photoURL)}" alt="${escapeHtml(user.name || "User")}" class="profile-photo-small">`
+      : `<div class="profile-photo-small avatar-fallback">${escapeHtml(initials(user.name || user.email))}</div>`;
+
+    row.innerHTML = `
+      ${photo}
+      <div class="user-list-text">
+        <strong>${escapeHtml(user.name || user.email || "User")}</strong>
+        <span>${escapeHtml(user.email || "")}</span>
+      </div>
+    `;
+
+    row.addEventListener("click", function () {
+      selectUser(user);
+    });
+
+    row.addEventListener("contextmenu", function (event) {
+      event.preventDefault();
+      openUserProfile(user);
+    });
+
+    userList.appendChild(row);
+  });
+}
+
+/* =========================================================
+   GROUPS
+   ========================================================= */
+
+function listenToGroups() {
+  stopGroupsListener();
+
+  if (!currentUser) return;
+
+  groupsListener = function (snapshot) {
+    const data = snapshot.val() || {};
 
     groupCache = {};
 
-    encryptionKeyPair = null;
-    publicEncryptionKey = null;
-    encryptionInitialized = false;
+    Object.keys(data).forEach(function (groupId) {
+      const group = data[groupId];
 
-    clearAllListeners();
-    stopPresenceListener();
+      if (group && group.members && group.members[currentUser.uid]) {
+        groupCache[groupId] = Object.assign({}, group, {
+          id: group.id || groupId
+        });
+      }
+    });
 
-    setGroupHeaderClickable(false);
+    renderGroups();
+  };
 
-    showAuth();
+  db.ref("groups").on("value", groupsListener);
+}
 
-    setError(
-      "Your TeamSpace account has been permanently deleted."
-    );
+function renderGroups() {
+  if (!userList) return;
+  if (currentWorkspace !== "groups") return;
 
-    if (authForm) {
-      authForm.reset();
+  const groups = Object.values(groupCache);
+
+  if (!groups.length) {
+    userList.innerHTML =
+      '<div class="empty-list">You are not a member of any groups yet.</div>';
+    return;
+  }
+
+  groups.sort(function (a, b) {
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+  userList.innerHTML = "";
+
+  groups.forEach(function (group) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "user-list-item";
+
+    if (selectedGroup && selectedGroup.id === group.id) {
+      row.classList.add("active");
     }
 
-    authMode =
-      "login";
+    const memberCount = Object.keys(group.members || {}).filter(function (uid) {
+      return group.members[uid];
+    }).length;
 
-    if (nameGroup) {
+    row.innerHTML = `
+      <div class="profile-photo-small avatar-fallback">${escapeHtml(initials(group.name || "Group"))}</div>
+      <div class="user-list-text">
+        <strong>${escapeHtml(group.name || "Group")}</strong>
+        <span>${memberCount} ${memberCount === 1 ? "member" : "members"}</span>
+      </div>
+    `;
 
-      nameGroup.classList.add(
-        "hidden"
-      );
+    row.addEventListener("click", function () {
+      selectGroup(group);
+    });
+
+    userList.appendChild(row);
+  });
+}
+
+/* =========================================================
+   GROUP CREATE BUTTON + MODAL
+   ========================================================= */
+
+function ensureGroupCreateButton() {
+  let button = document.getElementById("createGroupButtonNav");
+
+  if (button) return button;
+
+  const parent = userList && userList.parentElement;
+
+  if (!parent) return null;
+
+  button = document.createElement("button");
+  button.type = "button";
+  button.id = "createGroupButtonNav";
+  button.className = "teamspace-group-button";
+  button.textContent = "+ Create Group";
+  button.style.display = "none";
+
+  parent.insertBefore(button, userList);
+
+  button.addEventListener("click", openCreateGroupModal);
+
+  return button;
+}
+
+function openCreateGroupModal() {
+  if (!currentUser) return;
+  if (document.getElementById("createGroupModal")) return;
+
+  const modal = document.createElement("div");
+  modal.id = "createGroupModal";
+  modal.className = "teamspace-modal";
+
+  modal.innerHTML = `
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Create Group</h2>
+        <button type="button" class="modal-close" data-close-modal>×</button>
+      </div>
+      <div class="modal-body">
+        <label for="groupNameInput">Group name</label>
+        <input id="groupNameInput" type="text" maxlength="80" placeholder="Enter group name">
+
+        <label for="groupDescriptionInput">Description</label>
+        <textarea id="groupDescriptionInput" placeholder="Optional group description"></textarea>
+
+        <div id="createGroupError" class="error"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" data-close-modal>Cancel</button>
+        <button type="button" id="createGroupSubmitButton">Create Group</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.querySelectorAll("[data-close-modal]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      modal.remove();
+    });
+  });
+
+  modal.querySelector(".modal-backdrop").addEventListener("click", function () {
+    modal.remove();
+  });
+
+  const nameInput = modal.querySelector("#groupNameInput");
+  const descriptionInput = modal.querySelector("#groupDescriptionInput");
+  const errorElement = modal.querySelector("#createGroupError");
+  const submitButton = modal.querySelector("#createGroupSubmitButton");
+
+  nameInput.focus();
+
+  submitButton.addEventListener("click", async function () {
+    const name = nameInput.value.trim();
+    const description = descriptionInput.value.trim();
+
+    if (!name) {
+      errorElement.textContent = "Please enter a group name.";
+      return;
     }
 
-    if (authButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Creating…";
 
-      authButton.textContent =
-        "Sign in";
+    try {
+      const groupRef = db.ref("groups").push();
+
+      const groupData = {
+        id: groupRef.key,
+        name: name,
+        description: description,
+        createdBy: currentUser.uid,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        admins: { [currentUser.uid]: true },
+        members: { [currentUser.uid]: true }
+      };
+
+      await groupRef.set(groupData);
+
+      modal.remove();
+
+      const created = Object.assign({}, groupData, { id: groupRef.key });
+
+      groupCache[groupRef.key] = created;
+
+      switchWorkspace("groups");
+      selectGroup(created);
+    } catch (error) {
+      console.error(error);
+      errorElement.textContent = firebaseError(error);
+      submitButton.disabled = false;
+      submitButton.textContent = "Create Group";
     }
+  });
+}
 
-    document
-      .querySelectorAll(".tab")
-      .forEach(
-        tab => {
+/* =========================================================
+   GROUP DETAILS MODAL
+   ========================================================= */
 
-          tab.classList.toggle(
-            "active",
-            tab.dataset.mode ===
-            "login"
-          );
+function closeGroupDetails() {
+  if (groupProfileModal) groupProfileModal.classList.add("hidden");
+  currentGroupModalGroup = null;
+}
 
-        }
-      );
+/* ---------------------------------------------------------
+   Admin controls: rename + add member
+   --------------------------------------------------------- */
 
-  } catch (error) {
+function renderGroupAdminControls(group) {
+  if (!groupAdminControls) return;
 
-    console.error(
-      "Delete account error:",
-      error
-    );
+  const isAdmin = !!(group.admins && group.admins[currentUser.uid]);
 
-    if (
-      error.code ===
-      "auth/requires-recent-login"
-    ) {
+  if (!isAdmin) {
+    groupAdminControls.innerHTML = "";
+    return;
+  }
 
-      alert(
-        "For security, Firebase requires a recent login before deleting this account.\n\nPlease log out, sign in again, and then choose Delete Account."
-      );
+  const candidates = availableUsers.filter(function (user) {
+    return !(group.members && group.members[user.uid]);
+  });
 
-    } else {
+  groupAdminControls.innerHTML = `
+    <div class="group-admin-controls">
+      <label for="groupRenameInput">Group name</label>
+      <input id="groupRenameInput" type="text" maxlength="80" value="${escapeHtml(group.name || "")}">
+      <button type="button" class="group-admin-save" id="groupRenameSave">Save name</button>
+    </div>
 
-      alert(
-        "Unable to delete your account:\n\n" +
-        firebaseError(error)
-      );
-    }
+    <div class="group-admin-controls">
+      <label for="groupAddMemberSelect">
+        Add member${candidates.length ? " (" + candidates.length + " available)" : ""}
+      </label>
+      ${
+        candidates.length
+          ? `
+            <select id="groupAddMemberSelect">
+              <option value="">Select a person</option>
+              ${candidates
+                .map(function (user) {
+                  return `<option value="${escapeHtml(user.uid)}">${escapeHtml(
+                    user.name || user.email || "User"
+                  )}</option>`;
+                })
+                .join("")}
+            </select>
+            <button type="button" class="group-admin-save" id="groupAddMemberBtn">Add member</button>
+          `
+          : `<p style="opacity:.6;font-size:12px;margin:0;">Everyone is already a member.</p>`
+      }
+    </div>
 
-  } finally {
+    <div id="groupAdminError" class="error"></div>
+  `;
 
-    if (deleteAccountBtn) {
+  const renameInput = groupAdminControls.querySelector("#groupRenameInput");
+  const renameSave = groupAdminControls.querySelector("#groupRenameSave");
+  const addSelect = groupAdminControls.querySelector("#groupAddMemberSelect");
+  const addButton = groupAdminControls.querySelector("#groupAddMemberBtn");
+  const adminError = groupAdminControls.querySelector("#groupAdminError");
 
-      deleteAccountBtn.disabled =
-        false;
+  /* ---- Rename ---- */
+  if (renameSave && renameInput) {
+    renameSave.addEventListener("click", async function () {
+      const newName = renameInput.value.trim();
 
-      deleteAccountBtn.textContent =
-        "🗑 Delete Account";
-    }
+      if (!newName) {
+        adminError.textContent = "Group name cannot be empty.";
+        adminError.className = "error";
+        return;
+      }
+
+      renameSave.disabled = true;
+      adminError.textContent = "";
+
+      try {
+        await db.ref(`groups/${group.id}/name`).set(newName);
+        group.name = newName;
+
+        if (groupProfileName) groupProfileName.textContent = newName;
+
+        adminError.textContent = "Group name updated.";
+        adminError.className = "success";
+      } catch (error) {
+        adminError.textContent = firebaseError(error);
+        adminError.className = "error";
+      } finally {
+        renameSave.disabled = false;
+      }
+    });
+  }
+
+  /* ---- Add member ---- */
+  if (addButton && addSelect) {
+    addButton.addEventListener("click", async function () {
+      if (!(group.admins && group.admins[currentUser.uid])) {
+        adminError.textContent = "You are no longer an admin of this group.";
+        adminError.className = "error";
+        return;
+      }
+
+      const uid = addSelect.value;
+
+      if (!uid) {
+        adminError.textContent = "Select a person first.";
+        adminError.className = "error";
+        return;
+      }
+
+      if (group.members && group.members[uid]) {
+        adminError.textContent = "This person is already a member.";
+        adminError.className = "error";
+        return;
+      }
+
+      addButton.disabled = true;
+      addButton.textContent = "Adding…";
+      adminError.textContent = "";
+
+      try {
+        await db.ref(`groups/${group.id}/members/${uid}`).set(true);
+
+        group.members = group.members || {};
+        group.members[uid] = true;
+
+        await openGroupDetails(group);
+      } catch (error) {
+        adminError.textContent = firebaseError(error);
+        adminError.className = "error";
+        addButton.disabled = false;
+        addButton.textContent = "Add member";
+      }
+    });
   }
 }
 
+/* ---------------------------------------------------------
+   Group details modal: members list + remove buttons
+   --------------------------------------------------------- */
 
-if (deleteAccountBtn) {
+async function openGroupDetails(group) {
+  if (!group || !groupProfileModal || !currentUser) return;
 
-  deleteAccountBtn.addEventListener(
-    "click",
-    deleteAccount
-  );
+  currentGroupModalGroup = group;
+
+  const memberIds = Object.keys(group.members || {}).filter(function (uid) {
+    return group.members[uid];
+  });
+
+  const isAdmin = !!(group.admins && group.admins[currentUser.uid]);
+
+  groupProfileName.textContent = group.name || "Group";
+  groupProfileAvatar.textContent = "👥";
+  groupProfileSubtitle.textContent =
+    memberIds.length +
+    (memberIds.length === 1 ? " member" : " members") +
+    (group.description ? " · " + group.description : "");
+
+  renderGroupAdminControls(group);
+
+  groupMembersList.innerHTML = "<p>Loading members…</p>";
+
+  groupProfileModal.classList.remove("hidden");
+
+  /* Load member profiles */
+  const profiles = [];
+
+  for (let i = 0; i < memberIds.length; i++) {
+    try {
+      const snapshot = await db.ref("users/" + memberIds[i]).once("value");
+      const profile = snapshot.val();
+
+      if (profile) {
+        if (!profile.uid) profile.uid = memberIds[i];
+        profiles.push(profile);
+      }
+    } catch (error) {
+      console.warn("Unable to load member profile:", error);
+    }
+  }
+
+  /* Admins first, then alphabetical */
+  profiles.sort(function (a, b) {
+    const aAdmin = !!(group.admins && group.admins[a.uid]);
+    const bAdmin = !!(group.admins && group.admins[b.uid]);
+    if (aAdmin && !bAdmin) return -1;
+    if (!aAdmin && bAdmin) return 1;
+    return String(a.name || a.email || "").localeCompare(
+      String(b.name || b.email || "")
+    );
+  });
+
+  groupMembersList.innerHTML =
+    profiles
+      .map(function (member) {
+        const memberIsAdmin = !!(group.admins && group.admins[member.uid]);
+        const isMe = member.uid === currentUser.uid;
+
+        const avatar = member.photoURL
+          ? `<img src="${escapeHtml(member.photoURL)}" alt="${escapeHtml(member.name || "User")}">`
+          : escapeHtml(initials(member.name || member.email));
+
+        const removeButton =
+          isAdmin && !isMe
+            ? `<button type="button" class="group-member-remove" data-remove-member="${escapeHtml(member.uid)}">Remove</button>`
+            : "";
+
+        return `
+          <div class="group-member">
+            <div class="group-member-avatar">${avatar}</div>
+            <div class="group-member-info">
+              <div class="group-member-name">
+                ${escapeHtml(member.name || "User")}${isMe ? ' <small style="opacity:.6">(You)</small>' : ""}
+              </div>
+              <div class="group-member-email">${escapeHtml(member.email || "")}</div>
+            </div>
+            ${memberIsAdmin ? '<span class="group-admin-badge">Admin</span>' : ""}
+            ${removeButton}
+          </div>
+        `;
+      })
+      .join("") || "<p>No members.</p>";
+
+  /* Wire up Remove buttons */
+  groupMembersList
+    .querySelectorAll("[data-remove-member]")
+    .forEach(function (button) {
+      button.addEventListener("click", async function () {
+        if (!(group.admins && group.admins[currentUser.uid])) {
+          alert("You are no longer an admin of this group.");
+          return;
+        }
+
+        const uid = button.getAttribute("data-remove-member");
+        const member = profiles.find(function (p) {
+          return p.uid === uid;
+        });
+        const name = member
+          ? member.name || member.email || "this member"
+          : "this member";
+
+        if (!window.confirm('Remove "' + name + '" from this group?')) return;
+
+        button.disabled = true;
+        button.textContent = "Removing…";
+
+        try {
+          await db.ref(`groups/${group.id}/members/${uid}`).remove();
+          await db.ref(`groups/${group.id}/admins/${uid}`).remove();
+
+          group.members = group.members || {};
+          group.members[uid] = false;
+
+          if (group.admins) {
+            group.admins[uid] = false;
+          }
+
+          await openGroupDetails(group);
+        } catch (error) {
+          alert(firebaseError(error));
+          button.disabled = false;
+          button.textContent = "Remove";
+        }
+      });
+    });
 }
 
+if (closeGroupProfileModalBtn) {
+  closeGroupProfileModalBtn.addEventListener("click", closeGroupDetails);
+}
 
-/*
-  ============================================================
-  RESET CHAT INTERFACE
-  ============================================================
-*/
+if (groupProfileModal) {
+  groupProfileModal.addEventListener("click", function (event) {
+    if (event.target === groupProfileModal) closeGroupDetails();
+  });
+}
 
-function resetChatInterface() {
+if (leaveGroupBtn) {
+  leaveGroupBtn.addEventListener("click", async function () {
+    const group = currentGroupModalGroup;
+
+    if (!group || !currentUser) return;
+
+    if (
+      !window.confirm(
+        'Leave "' +
+          (group.name || "this group") +
+          '"?\n\nYou will no longer receive messages from this group.'
+      )
+    ) {
+      return;
+    }
+
+    leaveGroupBtn.disabled = true;
+    leaveGroupBtn.textContent = "Leaving…";
+
+    try {
+      await db.ref(`groups/${group.id}/members/${currentUser.uid}`).remove();
+      await db.ref(`groups/${group.id}/admins/${currentUser.uid}`).remove();
+
+      delete groupCache[group.id];
+
+      closeGroupDetails();
+
+      selectedGroup = null;
+
+      resetChatInterface();
+      renderGroups();
+    } catch (error) {
+      alert(firebaseError(error));
+      leaveGroupBtn.disabled = false;
+      leaveGroupBtn.textContent = "Leave Group";
+    }
+  });
+}
+
+/* =========================================================
+   PROFILE MODALS
+   ========================================================= */
+
+function closeProfile() {
+  if (profileModal) profileModal.classList.add("hidden");
+  if (profileModalContent) profileModalContent.innerHTML = "";
+}
+
+if (closeProfileModalBtn) {
+  closeProfileModalBtn.addEventListener("click", closeProfile);
+}
+
+if (profileModal) {
+  profileModal.addEventListener("click", function (event) {
+    if (event.target === profileModal) closeProfile();
+  });
+}
+
+function openOwnProfile() {
+  if (!currentUser || !profileModal) return;
+
+  const profile = currentProfile || {
+    name: currentUser.displayName || "",
+    email: currentUser.email || "",
+    photoURL: currentUser.photoURL || ""
+  };
+
+  const name = profile.name || currentUser.displayName || "User";
+  const email = profile.email || currentUser.email || "";
+  const photoURL = profile.photoURL || "";
+
+  if (photoURL) {
+    profileModalAvatar.innerHTML =
+      `<img src="${escapeHtml(photoURL)}" alt="${escapeHtml(name)}">`;
+  } else {
+    profileModalAvatar.textContent = initials(name);
+  }
+
+  profileModalTitle.textContent = "My Profile";
+  profileModalSubtitle.textContent = email;
+
+  profileModalContent.innerHTML = `
+    <div class="profile-field">
+      <label for="profileNameInput">Name</label>
+      <input id="profileNameInput" type="text" value="${escapeHtml(name)}">
+    </div>
+
+    <div class="profile-field">
+      <label for="profileEmailInput">Email</label>
+      <input id="profileEmailInput" type="email" value="${escapeHtml(email)}" disabled>
+    </div>
+
+    <div class="profile-field">
+      <label for="profilePhotoInput">Profile photo</label>
+      <input id="profilePhotoInput" type="file" accept="image/*">
+    </div>
+
+    <button type="button" id="saveProfileButton" class="profile-save-btn">Save changes</button>
+
+    <p id="profileMessage" class="profile-message"></p>
+  `;
+
+  profileModal.classList.remove("hidden");
+
+  const nameInput = profileModalContent.querySelector("#profileNameInput");
+  const photoInput = profileModalContent.querySelector("#profilePhotoInput");
+  const saveButton = profileModalContent.querySelector("#saveProfileButton");
+  const message = profileModalContent.querySelector("#profileMessage");
+
+  saveButton.addEventListener("click", async function () {
+    const newName = nameInput.value.trim();
+
+    if (!newName) {
+      message.textContent = "Name cannot be empty.";
+      message.className = "profile-message error";
+      return;
+    }
+
+    saveButton.disabled = true;
+    message.textContent = "Saving…";
+    message.className = "profile-message";
+
+    try {
+      let newPhotoURL = photoURL;
+
+      if (photoInput.files && photoInput.files[0]) {
+        newPhotoURL = await compressImage(photoInput.files[0], 500, 0.75);
+      }
+
+      await db.ref("users/" + currentUser.uid).update({
+        name: newName,
+        photoURL: newPhotoURL,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      try {
+        await currentUser.updateProfile({
+          displayName: newName,
+          photoURL: newPhotoURL
+        });
+      } catch (profileError) {
+        console.warn("Unable to update auth profile:", profileError);
+      }
+
+      currentProfile = Object.assign({}, currentProfile || {}, {
+        uid: currentUser.uid,
+        name: newName,
+        photoURL: newPhotoURL,
+        email: currentUser.email || ""
+      });
+
+      updateCurrentUserUI();
+
+      message.textContent = "Profile updated.";
+      message.className = "profile-message success";
+
+      setTimeout(closeProfile, 600);
+    } catch (error) {
+      console.error(error);
+      message.textContent = firebaseError(error);
+      message.className = "profile-message error";
+    } finally {
+      saveButton.disabled = false;
+    }
+  });
+}
+
+function openUserProfile(user) {
+  if (!user || !profileModal) return;
+
+  const name = user.name || user.displayName || "User";
+  const email = user.email || "";
+
+  if (user.photoURL) {
+    profileModalAvatar.innerHTML =
+      `<img src="${escapeHtml(user.photoURL)}" alt="${escapeHtml(name)}">`;
+  } else {
+    profileModalAvatar.textContent = initials(name);
+  }
+
+  profileModalTitle.textContent = name;
+  profileModalSubtitle.textContent = email;
+
+  profileModalContent.innerHTML = `
+    <p id="userProfilePresence" class="profile-message">Checking presence…</p>
+  `;
+
+  profileModal.classList.remove("hidden");
+
+  const presenceElement = profileModalContent.querySelector("#userProfilePresence");
+
+  db.ref("presence/" + user.uid)
+    .once("value")
+    .then(function (snapshot) {
+      const presence = snapshot.val();
+
+      if (!presence) {
+        presenceElement.textContent = "Last seen unavailable";
+        return;
+      }
+
+      presenceElement.textContent = presence.online
+        ? "Online"
+        : formatLastSeen(presence.lastSeen);
+    })
+    .catch(function () {
+      presenceElement.textContent = "Last seen unavailable";
+    });
+}
+
+/* =========================================================
+   WORKSPACE NAVIGATION
+   ========================================================= */
+
+function ensureWorkspaceNavigation() {
+  if (chatNav) {
+    chatNav.addEventListener("click", function () {
+      switchWorkspace("chat");
+    });
+  }
+
+  if (peopleNav) {
+    peopleNav.addEventListener("click", function () {
+      switchWorkspace("people");
+    });
+  }
+
+  if (groupsNav) {
+    groupsNav.addEventListener("click", function () {
+      switchWorkspace("groups");
+    });
+  }
+
+  if (peopleSearchInput) {
+    peopleSearchInput.addEventListener("input", function () {
+      if (currentWorkspace === "people") renderUsers();
+    });
+  }
+
+  if (refreshUsers) {
+    refreshUsers.addEventListener("click", async function () {
+      try {
+        await loadChattedUsers();
+
+        if (currentWorkspace === "people") renderUsers();
+        if (currentWorkspace === "groups") renderGroups();
+      } catch (error) {
+        console.warn("Refresh failed:", error);
+      }
+    });
+  }
+}
+
+function switchWorkspace(workspace) {
+  currentWorkspace = workspace;
 
   selectedUser = null;
   selectedGroup = null;
 
-  clearMessageListener();
   clearSelectedPresenceListener();
+  stopMessageListener();
 
-  setGroupHeaderClickable(false);
+  if (chatNav) chatNav.classList.toggle("active", workspace === "chat");
+  if (peopleNav) peopleNav.classList.toggle("active", workspace === "people");
+  if (groupsNav) groupsNav.classList.toggle("active", workspace === "groups");
 
-  if (chatUserName) {
-
-    chatUserName.textContent =
-      "Select a contact";
+  if (listTitle) {
+    listTitle.textContent =
+      workspace === "chat" ? "Chats" :
+      workspace === "people" ? "People" : "Groups";
   }
 
-  if (chatStatus) {
+  if (peopleSearchWrapper) {
+    peopleSearchWrapper.classList.toggle("hidden", workspace !== "people");
+  }
 
-    chatStatus.textContent =
-      "Choose someone from your contacts to start chatting.";
+  const createGroupButton = document.getElementById("createGroupButtonNav");
 
-    chatStatus.classList.remove(
-      "online",
-      "offline"
+  if (createGroupButton) {
+    createGroupButton.style.display = workspace === "groups" ? "" : "none";
+  }
+
+  if (messageForm) messageForm.classList.add("hidden");
+
+  if (workspace === "chat") {
+    renderUsers();
+    resetChatInterface();
+    return;
+  }
+
+  if (workspace === "people") {
+    renderUsers();
+    resetChatInterface();
+    renderEmptyChat(
+      "People",
+      "Select a person to start a private conversation."
     );
+    return;
   }
 
-  if (chatUserAvatar) {
-    chatUserAvatar.innerHTML = "";
+  if (workspace === "groups") {
+    renderGroups();
+    resetChatInterface();
+    renderEmptyChat("Groups", "Select a group to start messaging.");
   }
-
-  if (messageForm) {
-
-    messageForm.classList.add(
-      "hidden"
-    );
-  }
-
-  renderEmptyChat(
-    "Your conversations",
-    "Select a person from People to start chatting."
-  );
 }
 
+/* =========================================================
+   SELECT USER / GROUP
+   ========================================================= */
 
-/*
-  ============================================================
-  START APPLICATION
-  ============================================================
-*/
+async function selectUser(user) {
+  if (!user || !currentUser) return;
 
-async function startApp(user) {
+  selectedUser = user;
+  selectedGroup = null;
+
+  if (currentWorkspace === "groups") {
+    switchWorkspace("chat");
+    selectedUser = user;
+  }
+
+  if (chatNav) chatNav.classList.add("active");
+  if (groupsNav) groupsNav.classList.remove("active");
+  if (peopleNav) {
+    peopleNav.classList.toggle("active", currentWorkspace === "people");
+  }
+
+  if (listTitle) {
+    listTitle.textContent = currentWorkspace === "people" ? "People" : "Chats";
+  }
+
+  if (chatHeaderName) {
+    chatHeaderName.textContent = user.name || user.email || "User";
+  }
+
+  if (chatHeaderAvatar) {
+    if (user.photoURL) {
+      chatHeaderAvatar.innerHTML =
+        `<img src="${escapeHtml(user.photoURL)}" alt="${escapeHtml(user.name || "User")}">`;
+    } else {
+      chatHeaderAvatar.textContent = initials(user.name || user.email);
+    }
+  }
+
+  if (chatHeaderStatus) {
+    chatHeaderStatus.textContent = "Loading…";
+  }
+
+  listenToUserPresence(user.uid);
+
+  if (messageForm) messageForm.classList.remove("hidden");
+
+  renderEmptyChat(user.name || user.email || "Chat", "Loading messages…");
+
+  ensureUserInChatList(user);
+
+  listenToMessages();
+
+  if (messageInput) messageInput.focus();
+}
+
+function selectGroup(group) {
+  if (!group || !currentUser) return;
+
+  selectedGroup = group;
+  selectedUser = null;
+
+  clearSelectedPresenceListener();
+
+  currentWorkspace = "groups";
+
+  if (chatNav) chatNav.classList.remove("active");
+  if (peopleNav) peopleNav.classList.remove("active");
+  if (groupsNav) groupsNav.classList.add("active");
+
+  if (listTitle) listTitle.textContent = "Groups";
+
+  if (chatHeaderName) chatHeaderName.textContent = group.name || "Group";
+
+  if (chatHeaderAvatar) {
+    chatHeaderAvatar.textContent = initials(group.name || "Group");
+  }
+
+  if (chatHeaderStatus) {
+    const memberCount = Object.keys(group.members || {}).filter(function (uid) {
+      return group.members[uid];
+    }).length;
+
+    chatHeaderStatus.textContent =
+      memberCount + (memberCount === 1 ? " member" : " members") +
+      " · tap for info";
+  }
+
+  if (messageForm) messageForm.classList.remove("hidden");
+
+  renderEmptyChat(group.name || "Group", "Loading messages…");
+
+  listenToMessages();
+
+  if (messageInput) messageInput.focus();
+}
+
+/* =========================================================
+   MESSAGE PATH + LISTENER
+   ========================================================= */
+
+function getCurrentMessagePath() {
+  if (selectedUser && currentUser) {
+    const chatId = makeChatId(currentUser.uid, selectedUser.uid);
+    return `privateChats/${chatId}/messages`;
+  }
+
+  if (selectedGroup) {
+    return `groups/${selectedGroup.id}/messages`;
+  }
+
+  return null;
+}
+
+function listenToMessages() {
+  stopMessageListener();
+
+  const path = getCurrentMessagePath();
+
+  if (!path) return;
+
+  activeMessagePath = path;
+
+  const ref = db.ref(path).limitToLast(300);
+
+  const callback = async function (snapshot) {
+    if (activeMessagePath !== path) return;
+
+    const data = snapshot.val() || {};
+
+    const messageList = Object.keys(data)
+      .map(function (id) {
+        return Object.assign({}, data[id] || {}, { id: id });
+      })
+      .sort(function (a, b) {
+        return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+      });
+
+    if (selectedUser && !selectedGroup) {
+      await updatePrivateMessageReceipts(messageList);
+    }
+
+    if (activeMessagePath !== path) return;
+
+    renderMessages(messageList);
+  };
+
+  ref.on("value", callback);
+
+  messageListener = { ref: ref, callback: callback };
+}
+
+/* =========================================================
+   DELIVERY / READ RECEIPTS
+   ========================================================= */
+
+async function updatePrivateMessageReceipts(messageList) {
+  if (!currentUser || !selectedUser || selectedGroup) return;
+
+  const chatId = makeChatId(currentUser.uid, selectedUser.uid);
+  const updates = {};
+
+  messageList.forEach(function (message) {
+    if (!message.senderId || message.senderId === currentUser.uid) return;
+
+    const basePath = `privateChats/${chatId}/messages/${message.id}`;
+
+    const delivered =
+      message.deliveredTo && message.deliveredTo[currentUser.uid];
+
+    const read = message.readBy && message.readBy[currentUser.uid];
+
+    if (!delivered) {
+      updates[`${basePath}/deliveredTo/${currentUser.uid}`] = true;
+    }
+
+    if (!read) {
+      updates[`${basePath}/readBy/${currentUser.uid}`] = true;
+    }
+  });
+
+  if (!Object.keys(updates).length) return;
+
+  try {
+    await db.ref().update(updates);
+  } catch (error) {
+    console.warn("Unable to update receipts:", error);
+  }
+}
+
+function getPrivateMessageStatus(message) {
+  if (!message || !currentUser || !selectedUser) return null;
+  if (message.senderId !== currentUser.uid) return null;
+
+  const recipientUid = message.recipientUid || selectedUser.uid;
+
+  if (message.readBy && message.readBy[recipientUid]) {
+    return { className: "read", symbol: "✓✓", title: "Read" };
+  }
+
+  if (message.deliveredTo && message.deliveredTo[recipientUid]) {
+    return { className: "delivered", symbol: "✓✓", title: "Delivered" };
+  }
+
+  return {
+    className: "sent",
+    symbol: "✓",
+    title: selectedUserOnline ? "Sent" : "Sent — recipient offline"
+  };
+}
+
+/* =========================================================
+   MESSAGE RENDERING
+   ========================================================= */
+
+function renderMessagesFromCurrentListener() {
+  if (Array.isArray(lastRenderedMessages)) {
+    renderMessages(lastRenderedMessages);
+  }
+}
+
+function renderMessages(messageList) {
+  lastRenderedMessages = messageList;
+
+  if (!messages) return;
+
+  if (!messageList.length) {
+    messages.innerHTML = `
+      <div class="empty-chat">
+        <div class="empty-icon">💬</div>
+        <h2>${
+          selectedGroup
+            ? escapeHtml(selectedGroup.name || "Group")
+            : escapeHtml((selectedUser && (selectedUser.name || selectedUser.email)) || "Chat")
+        }</h2>
+        <p>No messages yet. Start the conversation.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const container = document.createDocumentFragment();
+  let previousDate = "";
+
+  for (let i = 0; i < messageList.length; i++) {
+    const message = messageList[i];
+
+    const messageDate = formatDate(message.createdAt);
+
+    if (messageDate && messageDate !== previousDate) {
+      const divider = document.createElement("div");
+      divider.className = "message-date-divider";
+      divider.textContent = messageDate;
+      container.appendChild(divider);
+      previousDate = messageDate;
+    }
+
+    const mine = currentUser && message.senderId === currentUser.uid;
+
+    const row = document.createElement("div");
+    row.className = mine ? "message-row mine" : "message-row";
+
+    const bubble = document.createElement("div");
+    bubble.className = mine ? "message-bubble mine" : "message-bubble";
+
+    if (selectedGroup && !mine) {
+      const sender = document.createElement("div");
+      sender.className = "message-sender";
+      sender.textContent = message.senderName || "User";
+      bubble.appendChild(sender);
+    }
+
+    if (message.type === "image") {
+      const source = message.photoData || message.body || "";
+
+      if (source) {
+        const image = document.createElement("img");
+        image.className = "chat-image";
+        image.alt = message.imageName || "Shared image";
+        image.loading = "lazy";
+        image.src = source;
+        bubble.appendChild(image);
+      } else {
+        const errorText = document.createElement("div");
+        errorText.className = "message-error";
+        errorText.textContent = "📷 Photo unavailable";
+        bubble.appendChild(errorText);
+      }
+
+      if (message.imageName) {
+        const imageName = document.createElement("div");
+        imageName.className = "image-name";
+        imageName.textContent = message.imageName;
+        bubble.appendChild(imageName);
+      }
+    } else {
+      const text = document.createElement("div");
+      text.className = "message-text";
+      text.textContent = message.body || "";
+      bubble.appendChild(text);
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "message-meta";
+
+    const time = document.createElement("span");
+    time.className = "message-time";
+    time.textContent = formatTime(message.createdAt);
+    meta.appendChild(time);
+
+    if (mine && selectedUser && !selectedGroup) {
+      const status = getPrivateMessageStatus(message);
+
+      if (status) {
+        const ticks = document.createElement("span");
+        ticks.className = "message-ticks " + status.className;
+        ticks.textContent = status.symbol;
+        ticks.title = status.title;
+        meta.appendChild(ticks);
+      }
+    }
+
+    bubble.appendChild(meta);
+    row.appendChild(bubble);
+    container.appendChild(row);
+  }
+
+  messages.innerHTML = "";
+  messages.appendChild(container);
+
+  requestAnimationFrame(function () {
+    messages.scrollTop = messages.scrollHeight;
+  });
+}
+
+/* =========================================================
+   SENDING — PRIVATE TEXT
+   ========================================================= */
+
+async function sendPrivateText(text) {
+  if (!currentUser || !selectedUser) return;
+
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  const chatId = makeChatId(currentUser.uid, selectedUser.uid);
+
+  await db.ref(`privateChats/${chatId}/messages`).push().set({
+    senderId: currentUser.uid,
+    senderName:
+      (currentProfile && currentProfile.name) ||
+      currentUser.displayName ||
+      currentUser.email ||
+      "User",
+    recipientUid: selectedUser.uid,
+    type: "text",
+    body: trimmed,
+    deliveredTo: {},
+    readBy: {},
+    createdAt: firebase.database.ServerValue.TIMESTAMP
+  });
+
+  ensureUserInChatList(selectedUser);
+}
+
+/* =========================================================
+   SENDING — GROUP TEXT
+   ========================================================= */
+
+async function sendGroupText(text) {
+  if (!currentUser || !selectedGroup) return;
+
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  await db.ref(`groups/${selectedGroup.id}/messages`).push().set({
+    senderId: currentUser.uid,
+    senderName:
+      (currentProfile && currentProfile.name) ||
+      currentUser.displayName ||
+      currentUser.email ||
+      "User",
+    type: "text",
+    body: trimmed,
+    createdAt: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
+/* =========================================================
+   MESSAGE FORM
+   ========================================================= */
+
+if (messageForm) {
+  messageForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    if (!messageInput) return;
+
+    const text = messageInput.value;
+
+    if (!text.trim()) return;
+
+    try {
+      messageInput.disabled = true;
+
+      if (selectedUser && !selectedGroup) {
+        await sendPrivateText(text);
+      } else if (selectedGroup) {
+        await sendGroupText(text);
+      } else {
+        return;
+      }
+
+      messageInput.value = "";
+    } catch (error) {
+      console.error("Message send failed:", error);
+      alert(firebaseError(error));
+    } finally {
+      messageInput.disabled = false;
+      messageInput.focus();
+    }
+  });
+}
+
+/* =========================================================
+   SENDING — PHOTO
+   ========================================================= */
+
+async function sendPhoto(file) {
+  if (!file) return;
+
+  if (!selectedUser && !selectedGroup) {
+    alert("Select a conversation first.");
+    return;
+  }
+
+  setUploadStatus("Preparing photo…");
+
+  try {
+    const compressed = await compressImage(file, 1000, 0.72);
+    const imageName = file.name || "photo.jpg";
+
+    if (selectedUser && !selectedGroup) {
+      setUploadStatus("Sending photo…");
+
+      const chatId = makeChatId(currentUser.uid, selectedUser.uid);
+
+      await db.ref(`privateChats/${chatId}/messages`).push().set({
+        senderId: currentUser.uid,
+        senderName:
+          (currentProfile && currentProfile.name) ||
+          currentUser.displayName ||
+          currentUser.email ||
+          "User",
+        recipientUid: selectedUser.uid,
+        type: "image",
+        photoData: compressed,
+        imageName: imageName,
+        deliveredTo: {},
+        readBy: {},
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      ensureUserInChatList(selectedUser);
+    } else if (selectedGroup) {
+      setUploadStatus("Sending photo…");
+
+      await db.ref(`groups/${selectedGroup.id}/messages`).push().set({
+        senderId: currentUser.uid,
+        senderName:
+          (currentProfile && currentProfile.name) ||
+          currentUser.displayName ||
+          currentUser.email ||
+          "User",
+        type: "image",
+        photoData: compressed,
+        imageName: imageName,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      });
+    }
+
+    setUploadStatus("");
+  } catch (error) {
+    console.error("Photo send failed:", error);
+    setUploadStatus("Photo failed to send.");
+    setTimeout(function () {
+      setUploadStatus("");
+    }, 3000);
+    alert(firebaseError(error));
+  }
+}
+
+if (imageButton) {
+  imageButton.addEventListener("click", function () {
+    if (imageInput) imageInput.click();
+  });
+}
+
+if (imageInput) {
+  imageInput.addEventListener("change", async function () {
+    const file = imageInput.files && imageInput.files[0];
+
+    if (!file) return;
+
+    await sendPhoto(file);
+
+    imageInput.value = "";
+  });
+}
+
+/* =========================================================
+   HEADER CLICKS
+   ========================================================= */
+
+if (chatHeaderInfo) {
+  chatHeaderInfo.addEventListener("click", function () {
+    if (selectedGroup) {
+      openGroupDetails(selectedGroup);
+      return;
+    }
+
+    if (selectedUser) {
+      openUserProfile(selectedUser);
+    }
+  });
+}
+
+if (profileCard) {
+  profileCard.addEventListener("click", function (event) {
+    if (event.target.closest(".account-actions")) return;
+    openOwnProfile();
+  });
+}
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logout() {
+  try {
+    await markOffline();
+  } catch (error) {
+    console.warn(error);
+  }
 
   clearAllListeners();
 
-  currentUser =
-    user;
+  selectedUser = null;
+  selectedGroup = null;
 
   try {
+    await auth.signOut();
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+}
 
-    const profileSnapshot =
-      await db.ref(
-        "users/" +
-        user.uid
-      ).once("value");
+if (logoutButton) {
+  logoutButton.addEventListener("click", function (event) {
+    event.stopPropagation();
+    logout();
+  });
+}
 
-    currentProfile =
-      profileSnapshot.val();
+/* =========================================================
+   DELETE ACCOUNT
+   ========================================================= */
+
+async function deleteAccount() {
+  if (!currentUser) return;
+
+  if (!window.confirm(
+    "Are you sure you want to permanently delete your account? This cannot be undone."
+  )) return;
+
+  if (!window.confirm(
+    "All of your profile information will be deleted. Continue?"
+  )) return;
+
+  const uid = currentUser.uid;
+
+  try {
+    await markOffline();
+    await db.ref("users/" + uid).remove();
+    await db.ref("presence/" + uid).remove();
+
+    await currentUser.delete();
+
+    clearAllListeners();
+  } catch (error) {
+    console.error("Account deletion failed:", error);
+    alert(firebaseError(error));
+  }
+}
+
+if (deleteAccountButton) {
+  deleteAccountButton.addEventListener("click", function (event) {
+    event.stopPropagation();
+    deleteAccount();
+  });
+}
+
+/* =========================================================
+   RESET CHAT INTERFACE
+   ========================================================= */
+
+function resetChatInterface() {
+  selectedUser = null;
+  selectedGroup = null;
+
+  clearSelectedPresenceListener();
+  stopMessageListener();
+
+  lastRenderedMessages = [];
+
+  if (chatHeaderName) chatHeaderName.textContent = "Select a contact";
+
+  if (chatHeaderStatus) {
+    chatHeaderStatus.textContent =
+      "Choose someone from People to start chatting.";
+  }
+
+  if (chatHeaderAvatar) chatHeaderAvatar.innerHTML = "";
+
+  if (messageForm) messageForm.classList.add("hidden");
+
+  renderEmptyChat(
+    "Your conversations",
+    "Select a person from People to start a private chat, or open Chat to continue an existing conversation."
+  );
+}
+
+/* =========================================================
+   START APPLICATION
+   ========================================================= */
+
+async function startApp(user) {
+  currentUser = user;
+
+  clearAllListeners();
+
+  try {
+    const snapshot = await db.ref("users/" + user.uid).once("value");
+
+    currentProfile = snapshot.val() || null;
 
     if (!currentProfile) {
-
       currentProfile = {
-
-        uid:
-          user.uid,
-
-        name:
-          user.displayName ||
-          user.email ||
-          "User",
-
-        email:
-          user.email ||
-          "",
-
-        createdAt:
-          firebase.database
-            .ServerValue.TIMESTAMP
-
+        uid: user.uid,
+        name: user.displayName || user.email || "User",
+        email: user.email || "",
+        photoURL: user.photoURL || "",
+        createdAt: firebase.database.ServerValue.TIMESTAMP
       };
 
-      await db.ref(
-        "users/" +
-        user.uid
-      ).set(
-        currentProfile
-      );
+      await db.ref("users/" + user.uid).set(currentProfile);
+    } else {
+      if (!currentProfile.uid) currentProfile.uid = user.uid;
+      if (!currentProfile.email) currentProfile.email = user.email || "";
     }
 
+    updateCurrentUserUI();
 
-    /*
-      Initialize E2EE before private messaging.
-    */
-
-    await initializeEncryption();
-
-    updateProfileUI();
-
-    createGroupInterface();
-
-    attachOwnProfileClick();
-
-    showApplication();
+    showApp();
 
     resetChatInterface();
-
-    chattedUsers = [];
-
-    currentWorkspace =
-      "chat";
-
-    setWorkspace("chat");
 
     startPresence();
 
     listenToUsers();
-
     listenToGroups();
 
     await loadChattedUsers();
 
-    renderChatList();
+    ensureGroupCreateButton();
 
+    switchWorkspace("chat");
   } catch (error) {
-
-    console.error(
-      "Unable to initialize app:",
-      error
-    );
-
-    showAuth();
-
-    setError(
-      firebaseError(error)
-    );
+    console.error("Application startup failed:", error);
+    alert(firebaseError(error));
   }
 }
 
+/* =========================================================
+   AUTH STATE
+   ========================================================= */
 
-/*
-  ============================================================
-  FIREBASE AUTH STATE
-  ============================================================
-*/
-
-auth.onAuthStateChanged(
-  async user => {
-
-    if (user) {
-
-      await startApp(user);
-
-    } else {
-
-      stopPresenceListener();
-
-      clearAllListeners();
-
-      currentUser = null;
-      currentProfile = null;
-
-      selectedUser = null;
-      selectedGroup = null;
-
-      availableUsers = [];
-      chattedUsers = [];
-
-      groupCache = {};
-
-      encryptionKeyPair = null;
-      publicEncryptionKey = null;
-      encryptionInitialized = false;
-
-      currentWorkspace =
-        "chat";
-
-      setGroupHeaderClickable(false);
-
-      if (userList) {
-        userList.innerHTML = "";
-      }
-
-      showAuth();
-    }
-
+auth.onAuthStateChanged(async function (user) {
+  if (user) {
+    await startApp(user);
+    return;
   }
-);
 
+  clearAllListeners();
 
-/*
-  ============================================================
-  APPLICATION INITIALIZATION
-  ============================================================
-*/
+  currentUser = null;
+  currentProfile = null;
 
-installDynamicStyles();
+  selectedUser = null;
+  selectedGroup = null;
 
+  availableUsers = [];
+  chattedUsers = [];
+  groupCache = {};
+
+  currentWorkspace = "chat";
+
+  currentGroupModalGroup = null;
+
+  lastRenderedMessages = [];
+
+  if (userList) userList.innerHTML = "";
+
+  closeProfile();
+  closeGroupDetails();
+
+  resetChatInterface();
+
+  showAuth();
+
+  setAuthMode(authMode || "login");
+});
+
+/* =========================================================
+   GLOBAL HANDLERS
+   ========================================================= */
+
+window.addEventListener("error", function (event) {
+  console.error("TeamSpace error:", event.error || event.message);
+});
+
+window.addEventListener("unhandledrejection", function (event) {
+  console.error("Unhandled TeamSpace promise:", event.reason);
+});
+
+window.addEventListener("beforeunload", function () {
+  /* Firebase onDisconnect handles online/offline transitions. */
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+
+injectStyles();
 initializeTheme();
-
 ensureWorkspaceNavigation();
+ensureGroupCreateButton();
+setAuthMode("login");
 
-createGroupInterface();
+console.log("TeamSpace Chat initialized.");
